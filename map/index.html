@@ -1,0 +1,2460 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GRIDBOUND · 战图印制坊</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23141210'/%3E%3Cpath d='M16 4 L19 13 L28 16 L19 19 L16 28 L13 19 L4 16 L13 13 Z' fill='none' stroke='%23c8a45c' stroke-width='1.6'/%3E%3C/svg%3E">
+<style>
+/* ================= 基础与主题 ================= */
+:root{
+  --bg:#151210;
+  --bg2:#1b1713;
+  --panel:#201b15;
+  --panel2:#262019;
+  --line:#3a3226;
+  --line2:#4a4030;
+  --ink:#d9cfbc;
+  --ink-dim:#9a8e77;
+  --ink-faint:#6e6450;
+  --gold:#c8a45c;
+  --gold-hi:#e8c987;
+  --gold-dk:#8a6f3a;
+  --sage:#8fae8a;
+  --rust:#c06a4d;
+  --serif:"Palatino Linotype",Palatino,Georgia,"Times New Roman",serif;
+  --mono:Consolas,"Cascadia Mono","Courier New",monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  background:var(--bg);
+  color:var(--ink);
+  font-family:var(--serif);
+  font-size:14px;
+  overflow:hidden;
+  background-image:
+    radial-gradient(1200px 700px at 70% -10%, rgba(200,164,92,.05), transparent 60%),
+    repeating-linear-gradient(0deg, transparent 0 31px, rgba(200,164,92,.025) 31px 32px),
+    repeating-linear-gradient(90deg, transparent 0 31px, rgba(200,164,92,.025) 31px 32px);
+}
+::selection{background:rgba(200,164,92,.35)}
+
+/* ================= 头部 ================= */
+header{
+  height:52px;display:flex;align-items:center;gap:14px;padding:0 18px;
+  border-bottom:1px solid var(--line);
+  background:linear-gradient(180deg,#1d1812,#171310);
+  position:relative;
+}
+header .compass{width:30px;height:30px;flex:none}
+header h1{
+  font-size:19px;letter-spacing:.35em;font-weight:600;color:var(--gold-hi);
+  text-transform:uppercase;
+}
+header h1 span{color:var(--ink-dim);letter-spacing:.12em;font-size:11px;margin-left:10px;text-transform:none}
+header .motto{
+  margin-left:auto;font-style:italic;color:var(--ink-faint);font-size:12px;letter-spacing:.08em;
+}
+
+/* ================= 主布局 ================= */
+main{display:flex;height:calc(100% - 52px)}
+
+/* 步骤栏 */
+nav#steps{
+  width:172px;flex:none;border-right:1px solid var(--line);
+  padding:18px 0;display:flex;flex-direction:column;gap:4px;
+  background:rgba(23,19,15,.6);
+}
+.step{
+  display:flex;align-items:center;gap:12px;padding:13px 16px;cursor:pointer;
+  border-left:3px solid transparent;color:var(--ink-faint);user-select:none;
+  transition:background .15s,color .15s;
+}
+.step:hover{color:var(--ink-dim)}
+.step .num{
+  width:26px;height:26px;flex:none;border:1px solid var(--line2);border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--mono);font-size:12px;
+}
+.step.active{color:var(--gold-hi);border-left-color:var(--gold);background:rgba(200,164,92,.07)}
+.step.active .num{border-color:var(--gold);color:var(--gold)}
+.step.done{color:var(--ink-dim)}
+.step.done .num{border-color:var(--sage);color:var(--sage)}
+.step.done .num::after{content:"✓"}
+.step.done .num span, .step.active .num span{display:none}
+.step .num span{display:inline}
+.step.locked{opacity:.38;cursor:not-allowed}
+.step .t{display:flex;flex-direction:column}
+.step .t small{font-size:10px;letter-spacing:.1em;color:inherit;opacity:.6;font-family:var(--mono)}
+
+/* 舞台 */
+#stage{flex:1;display:flex;flex-direction:column;min-width:0;position:relative}
+#toolbar{
+  height:44px;flex:none;display:flex;align-items:center;gap:8px;padding:0 12px;
+  border-bottom:1px solid var(--line);background:rgba(23,19,15,.5);
+}
+.tgroup{display:flex;gap:4px;align-items:center;padding:0 10px;border-right:1px solid var(--line)}
+.tgroup:last-child{border-right:none}
+.tbtn{
+  min-width:32px;height:30px;padding:0 10px;display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  background:transparent;border:1px solid var(--line2);border-radius:4px;color:var(--ink-dim);
+  font-family:var(--serif);font-size:12.5px;cursor:pointer;transition:all .12s;
+}
+.tbtn:hover{color:var(--gold-hi);border-color:var(--gold-dk)}
+.tbtn.on{background:rgba(200,164,92,.14);border-color:var(--gold);color:var(--gold-hi)}
+.tbtn:disabled{opacity:.35;cursor:not-allowed}
+.tbtn svg{width:15px;height:15px;flex:none}
+#zoomPct{font-family:var(--mono);font-size:12px;color:var(--ink-dim);min-width:44px;text-align:center}
+
+#canvasWrap{flex:1;position:relative;overflow:hidden;background:
+  radial-gradient(900px 600px at 50% 40%, #191510, #12100d);}
+#view{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
+#view.tool-cal,#view.tool-split{cursor:crosshair}
+#view.tool-pan{cursor:grab}
+#view.tool-adjust{cursor:default}
+#view.dragging{cursor:grabbing}
+
+/* 上传区 */
+#dropzone{
+  position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;
+  cursor:pointer;z-index:5;
+}
+#dropzone.hidden{display:none}
+#dropzone .frame{
+  width:min(520px,80%);padding:46px 30px;text-align:center;
+  border:1px dashed var(--gold-dk);position:relative;
+  background:rgba(200,164,92,.03);
+  transition:all .2s;
+}
+#dropzone.over .frame{border-color:var(--gold-hi);background:rgba(200,164,92,.09)}
+#dropzone .frame::before,#dropzone .frame::after{
+  content:"";position:absolute;width:14px;height:14px;border:1px solid var(--gold);
+}
+#dropzone .frame::before{top:-1px;left:-1px;border-right:none;border-bottom:none}
+#dropzone .frame::after{bottom:-1px;right:-1px;border-left:none;border-top:none}
+#dropzone .big{font-size:30px;color:var(--gold);letter-spacing:.2em}
+#dropzone h2{font-size:17px;color:var(--ink);margin:10px 0 6px;font-weight:500}
+#dropzone p{color:var(--ink-faint);font-size:12.5px;line-height:1.7}
+#dropzone kbd{font-family:var(--mono);font-size:11px;border:1px solid var(--line2);border-radius:3px;padding:1px 5px;color:var(--ink-dim)}
+
+/* 校准浮层 */
+#calPop{
+  position:absolute;z-index:20;background:var(--panel2);border:1px solid var(--gold-dk);
+  padding:12px 14px;border-radius:6px;box-shadow:0 8px 30px rgba(0,0,0,.6);
+  display:none;width:230px;
+}
+#calPop.show{display:block}
+#calPop h4{font-size:13px;color:var(--gold-hi);margin-bottom:9px;letter-spacing:.05em}
+#calPop .row{display:flex;gap:8px;margin-bottom:9px}
+#calPop label{flex:1;font-size:11px;color:var(--ink-dim);display:flex;flex-direction:column;gap:4px}
+#calPop .btns{display:flex;gap:8px;justify-content:flex-end;margin-top:2px}
+
+/* 状态栏 */
+#statusbar{
+  height:26px;flex:none;display:flex;align-items:center;gap:0;padding:0 6px;
+  border-top:1px solid var(--line);background:rgba(23,19,15,.7);
+  font-family:var(--mono);font-size:11px;color:var(--ink-faint);
+}
+#statusbar .cell{padding:0 12px;border-right:1px solid var(--line);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#statusbar .cell:last-child{border-right:none}
+#statusbar b{color:var(--ink-dim);font-weight:400}
+
+/* ================= 右侧面板 ================= */
+aside#panel{
+  width:312px;flex:none;border-left:1px solid var(--line);overflow-y:auto;
+  background:rgba(28,23,17,.7);padding:16px;display:flex;flex-direction:column;gap:14px;
+}
+aside#panel::-webkit-scrollbar{width:8px}
+aside#panel::-webkit-scrollbar-thumb{background:var(--line2);border-radius:4px}
+.pstep{display:none;flex-direction:column;gap:14px}
+.pstep.show{display:flex}
+.card{
+  border:1px solid var(--line);background:linear-gradient(180deg,rgba(38,32,25,.5),rgba(30,25,19,.5));
+  padding:13px 14px;border-radius:6px;position:relative;
+}
+.card>h3{
+  font-size:12px;letter-spacing:.18em;color:var(--gold);font-weight:600;margin-bottom:11px;
+  display:flex;align-items:center;gap:8px;text-transform:uppercase;
+}
+.card>h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--gold-dk),transparent)}
+.card .hint{font-size:12px;color:var(--ink-faint);line-height:1.65}
+.card .hint em{color:var(--ink-dim);font-style:normal}
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:7px;
+  padding:8px 16px;border-radius:4px;cursor:pointer;font-family:var(--serif);font-size:13.5px;
+  border:1px solid var(--gold-dk);background:transparent;color:var(--gold-hi);
+  transition:all .15s;letter-spacing:.05em;
+}
+.btn:hover{background:rgba(200,164,92,.12)}
+.btn.primary{background:var(--gold);color:#1c1610;border-color:var(--gold);font-weight:600}
+.btn.primary:hover{background:var(--gold-hi)}
+.btn:disabled{opacity:.35;cursor:not-allowed}
+.btn.wide{width:100%}
+.btn.small{padding:4px 10px;font-size:12px}
+.btn.ghost{border-color:var(--line2);color:var(--ink-dim)}
+.btn.ghost:hover{color:var(--ink);background:rgba(255,255,255,.03)}
+.btnrow{display:flex;gap:8px}
+
+.field{display:flex;flex-direction:column;gap:5px;margin-bottom:10px}
+.field:last-child{margin-bottom:0}
+.field>label{font-size:11.5px;color:var(--ink-dim);letter-spacing:.05em}
+.field .ctl{display:flex;gap:6px;align-items:center}
+input[type=number],input[type=text],select{
+  background:#171310;border:1px solid var(--line2);border-radius:4px;color:var(--ink);
+  font-family:var(--mono);font-size:13px;padding:6px 8px;width:100%;
+  outline:none;transition:border-color .15s;
+}
+input:focus,select:focus{border-color:var(--gold-dk)}
+input[type=number]{text-align:right}
+input[type=checkbox]{accent-color:var(--gold);width:14px;height:14px;cursor:pointer}
+input[type=color]{width:100%;height:30px;border:1px solid var(--line2);border-radius:4px;background:#171310;cursor:pointer;padding:2px}
+select{cursor:pointer}
+.seg{display:flex;border:1px solid var(--line2);border-radius:4px;overflow:hidden;flex:1}
+.seg button{
+  flex:1;padding:6px 0;background:transparent;border:none;color:var(--ink-faint);
+  font-family:var(--serif);font-size:12.5px;cursor:pointer;transition:all .12s;
+}
+.seg button.on{background:rgba(200,164,92,.16);color:var(--gold-hi)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.stat{
+  display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px dashed var(--line);
+  font-size:12.5px;
+}
+.stat:last-child{border-bottom:none}
+.stat .k{color:var(--ink-faint)}
+.stat .v{font-family:var(--mono);color:var(--gold-hi)}
+.badge{display:inline-block;font-family:var(--mono);font-size:11px;padding:2px 8px;border-radius:3px;border:1px solid var(--line2);color:var(--ink-dim)}
+.badge.ok{border-color:var(--sage);color:var(--sage)}
+.badge.no{border-color:var(--rust);color:var(--rust)}
+
+/* 叠加设置 */
+.swatches{display:flex;gap:7px;align-items:center}
+.sw{width:22px;height:22px;border-radius:4px;cursor:pointer;border:2px solid transparent}
+.sw.on{border-color:#fff}
+input[type=range]{width:100%;accent-color:var(--gold);cursor:pointer}
+
+/* 页面缩略列表 */
+.pagelist{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.pagethumb{
+  border:1px solid var(--line);border-radius:5px;overflow:hidden;cursor:pointer;position:relative;
+  background:#fff;
+}
+.pagethumb img,.pagethumb canvas{display:block;width:100%;height:auto}
+.pagethumb .tag{
+  position:absolute;top:4px;left:4px;background:rgba(20,18,16,.85);color:var(--gold-hi);
+  font-family:var(--mono);font-size:10px;padding:2px 6px;border-radius:3px;
+}
+.pagethumb.off{opacity:.3;filter:grayscale(.8)}
+.pagethumb .dl{
+  position:absolute;bottom:4px;right:4px;background:rgba(20,18,16,.85);color:var(--ink-dim);
+  font-size:11px;padding:2px 7px;border-radius:3px;cursor:pointer;font-family:var(--serif);
+}
+.pagethumb .dl:hover{color:var(--gold-hi)}
+
+/* 图幅标签 */
+.scope-tabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:4px}
+.scope-tab{
+  padding:4px 12px;border:1px solid var(--line2);border-radius:14px;font-size:12px;
+  color:var(--ink-faint);cursor:pointer;transition:all .12s;
+}
+.scope-tab.on{border-color:var(--gold);color:var(--gold-hi);background:rgba(200,164,92,.1)}
+.scope-tab.noGrid{border-color:var(--rust);color:var(--rust)}
+.sheet-check{display:flex;gap:8px;align-items:center;font-size:13px;color:var(--ink-dim);padding:5px 0;cursor:pointer}
+
+/* 提示条 */
+#toast{
+  position:fixed;bottom:44px;left:50%;transform:translateX(-50%) translateY(20px);
+  background:var(--panel2);border:1px solid var(--gold-dk);color:var(--ink);
+  padding:10px 20px;border-radius:6px;font-size:13px;z-index:100;
+  opacity:0;pointer-events:none;transition:all .25s;max-width:70vw;
+  box-shadow:0 10px 30px rgba(0,0,0,.5);
+}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+#toast.warn{border-color:var(--rust);color:#e0b3a3}
+#toast.err{border-color:var(--rust);background:#2c1712;color:#e8a08a}
+
+/* 弹窗（进度 / 单页 / 确认） */
+.modal{
+  position:fixed;inset:0;background:rgba(10,8,6,.78);z-index:90;display:none;
+  align-items:center;justify-content:center;
+}
+.modal.show{display:flex}
+.modal .box{
+  background:var(--panel);border:1px solid var(--gold-dk);border-radius:8px;padding:24px;
+  text-align:center;max-height:92vh;overflow:auto;
+}
+.modal h3{color:var(--gold-hi);font-size:15px;margin-bottom:16px;letter-spacing:.1em}
+#pbar{height:8px;border:1px solid var(--line2);border-radius:4px;overflow:hidden;margin-bottom:10px}
+#pfill{height:100%;width:0;background:linear-gradient(90deg,var(--gold-dk),var(--gold-hi));transition:width .15s}
+#ptext{font-family:var(--mono);font-size:12px;color:var(--ink-dim)}
+#pdone{display:none;margin-top:14px}
+#pageModal .box{width:560px;max-width:94vw}
+#pmCanvas{width:100%;border:1px solid var(--line2);border-radius:4px;background:#fff;margin-bottom:14px}
+#pmBtns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+
+/* 使用指南 */
+#btnHelp{
+  width:26px;height:26px;flex:none;cursor:pointer;
+  border:1px solid var(--gold);border-radius:50%;background:none;
+  color:var(--gold-hi);font-family:var(--mono);font-size:13px;line-height:1;
+}
+#btnHelp:hover{background:rgba(200,164,92,.12)}
+#helpModal .box{width:560px;max-width:94vw;text-align:left}
+.gstep{display:flex;gap:12px;padding:9px 0;border-bottom:1px solid var(--line2)}
+.gstep:last-of-type{border-bottom:none}
+.gnum{
+  width:22px;height:22px;flex:none;border:1px solid var(--gold);border-radius:50%;
+  color:var(--gold-hi);font-family:var(--mono);font-size:12px;
+  display:flex;align-items:center;justify-content:center;
+}
+.gstep p,.qa p{font-size:12px;color:var(--ink-faint);line-height:1.65;margin-top:3px}
+.gstep b{color:var(--ink)}
+#helpModal .faq-h{margin-top:18px}
+.qa{border-top:1px solid var(--line2);padding:8px 0}
+.qa summary{color:var(--gold-hi);font-size:12.5px;cursor:pointer}
+#helpClose{margin-top:16px;width:100%}
+
+.kbd-hint{font-family:var(--mono);font-size:10.5px;color:var(--ink-faint);line-height:1.8;margin-top:8px}
+.kbd-hint kbd{border:1px solid var(--line2);border-radius:3px;padding:0 4px;color:var(--ink-dim)}
+</style>
+</head>
+<body>
+
+<header>
+  <svg class="compass" viewBox="0 0 32 32" fill="none">
+    <circle cx="16" cy="16" r="13.5" stroke="#8a6f3a" stroke-width="1"/>
+    <circle cx="16" cy="16" r="10" stroke="#4a4030" stroke-width=".6"/>
+    <path d="M16 4 L18.4 13.6 L28 16 L18.4 18.4 L16 28 L13.6 18.4 L4 16 L13.6 13.6 Z" stroke="#c8a45c" stroke-width="1.2"/>
+    <circle cx="16" cy="16" r="1.4" fill="#e8c987"/>
+  </svg>
+  <h1>Gridbound<span>战图印制坊</span></h1>
+  <div class="motto">“每格五尺，寸土不差。”</div>
+  <button id="btnHelp" title="使用指南">?</button>
+</header>
+
+<main>
+  <!-- 步骤导航 -->
+  <nav id="steps">
+    <div class="step active" data-step="0"><div class="num"><span>1</span></div><div class="t">上传地图<small>LOAD</small></div></div>
+    <div class="step locked" data-step="1"><div class="num"><span>2</span></div><div class="t">图幅校准<small>CALIBRATE</small></div></div>
+    <div class="step locked" data-step="2"><div class="num"><span>3</span></div><div class="t">分页编排<small>PAGINATE</small></div></div>
+    <div class="step locked" data-step="3"><div class="num"><span>4</span></div><div class="t">导出印制<small>EXPORT</small></div></div>
+  </nav>
+
+  <!-- 舞台 -->
+  <section id="stage">
+    <div id="toolbar">
+      <div class="tgroup" id="toolTools">
+        <button class="tbtn on" data-tool="pan" title="平移 (拖拽)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 9l-3 3 3 3M9 5l3-3 3 3M15 19l-3 3-3-3M19 9l3 3-3 3M2 12h20M12 2v20"/></svg>
+        </button>
+        <button class="tbtn" data-tool="cal" title="框选校准：框住横平竖直的 N×M 格" id="toolCal">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v16H4z" stroke-dasharray="4 3"/><path d="M9 4v16M15 4v16M4 9h16M4 15h16" stroke-width="1"/></svg>框选校准
+        </button>
+        <button class="tbtn" data-tool="split" title="拖拽矩形分割出新图幅（多层地图用）" id="toolSplit">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="1"/><path d="M12 3v18" stroke-dasharray="3 3"/></svg>分割图幅
+        </button>
+        <button class="tbtn" data-tool="adjust" title="移动/缩放当前图幅：图幅内拖动=整体挪动，贴边/贴角拖动=改大小" id="toolAdjust">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M2 12h20M9 5l3-3 3 3M9 19l3 3 3-3M5 9l-3 3 3 3M19 9l3 3-3 3"/></svg>调整图幅
+        </button>
+      </div>
+      <div class="tgroup">
+        <button class="tbtn" id="zoomFit" title="适应窗口">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5"/></svg>
+        </button>
+        <button class="tbtn" id="zoomOut" title="缩小">−</button>
+        <div id="zoomPct">—</div>
+        <button class="tbtn" id="zoomIn" title="放大">+</button>
+      </div>
+      <div class="tgroup" id="overlayTools">
+        <button class="tbtn on" id="tglGrid" title="显示/隐藏网格叠加">网格</button>
+        <button class="tbtn on" id="tglPages" title="显示/隐藏页框">页框</button>
+      </div>
+      <div class="tgroup" style="margin-left:auto">
+        <button class="tbtn" id="btnRestart" title="重新上传">↺ 重来</button>
+      </div>
+    </div>
+
+    <div id="canvasWrap">
+      <canvas id="view"></canvas>
+      <div id="dropzone">
+        <div class="frame">
+          <div class="big">✥</div>
+          <h2>将战斗地图拖入此处</h2>
+          <p>或点击选择文件 · 支持 WEBP / PNG / JPG<br>
+          建议使用带格线的原版地图以获得最佳识别效果<br>
+          <kbd>所有处理均在本地完成，地图不会上传</kbd></p>
+        </div>
+      </div>
+      <!-- 框选校准浮层 -->
+      <div id="calPop">
+        <h4>框住了多少格？</h4>
+        <div class="row">
+          <label>横向列数<input type="number" id="calCols" value="10" min="1" step="1"></label>
+          <label>纵向行数<input type="number" id="calRows" value="10" min="1" step="1"></label>
+        </div>
+        <div style="font-size:11px;color:var(--ink-faint);margin-bottom:9px;font-family:var(--mono)" id="calInfo"></div>
+        <div id="calWarn" style="display:none;font-size:11px;color:var(--rust);line-height:1.55;margin-bottom:9px"></div>
+        <label style="display:flex;gap:6px;align-items:center;font-size:11.5px;color:var(--ink-dim);margin-bottom:9px;cursor:pointer">
+          <input type="checkbox" id="calSquare" checked>按正方形校准（取小边）
+        </label>
+        <div class="btns">
+          <button class="btn small ghost" id="calCancel">取消</button>
+          <button class="btn small primary" id="calOk">确定</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="statusbar">
+      <div class="cell" id="stImg">未加载地图</div>
+      <div class="cell" id="stGrid">网格未校准</div>
+      <div class="cell" id="stCursor">—</div>
+      <div class="cell" id="stPage">—</div>
+    </div>
+  </section>
+
+  <!-- 右侧面板 -->
+  <aside id="panel">
+
+    <!-- 第1步：上传 -->
+    <div class="pstep show" id="pstep0">
+      <div class="card">
+        <h3>第一步 · 载入图纸</h3>
+        <p class="hint">把地图文件拖进左侧画布，或<em>点击画布中央</em>选择文件。<br><br>
+        支持常见位图格式（WEBP / PNG / JPG）。带清晰网格线的地图可以自动识别；
+        无网格线或识别失败也无需担心——下一步可用<em>框选校准</em>手动搞定。</p>
+        <div style="margin-top:12px"><button class="btn wide" id="btnPick">选择地图文件</button></div>
+      </div>
+      <div class="card">
+        <h3>印制原理</h3>
+        <p class="hint">本工具将地图校准到<strong style="color:var(--gold-hi)">每格恰好 2.5cm</strong>，
+        再按 A4 / A3 纸张切分多页。导出的 PDF 自带物理尺寸，
+        打印时选择<em>「实际大小 / 100% 缩放」</em>即可精确还原。</p>
+      </div>
+    </div>
+
+    <!-- 第2步：校准 -->
+    <div class="pstep" id="pstep1">
+      <div class="card">
+        <h3>图幅</h3>
+        <div class="scope-tabs" id="sheetTabs1"></div>
+        <div class="btnrow" style="margin-top:8px">
+          <button class="btn small" id="btnNewSheet">＋ 分割新图幅</button>
+          <button class="btn small ghost" id="btnDelSheet" disabled>删除当前</button>
+        </div>
+        <p class="hint" style="margin-top:8px">多层甲板/分区地图：点「分割新图幅」后到画布上<em>拖一个矩形</em>，
+        新图幅拥有<em>独立的网格校准、纸张参数与分页</em>。画偏了不必删除重建——用工具栏<em>「调整图幅」</em>直接挪动或改大小。
+        当前操作对象：<em id="curSheetName">全图</em></p>
+      </div>
+      <div class="card">
+        <h3>自动识别</h3>
+        <button class="btn wide" id="btnDetect">⟡ 识别网格线</button>
+        <button class="btn wide ghost" id="btnCopyGrid" style="margin-top:8px" title="同一张底图格线连续，直接沿用已校准图幅的原点与边长">⧉ 复制其他图幅的格子</button>
+        <div id="detectStat" style="margin-top:10px;font-family:var(--mono);font-size:11.5px;color:var(--ink-faint);line-height:1.8"></div>
+      </div>
+      <div class="card">
+        <h3>手工校准</h3>
+        <p class="hint">点击工具栏<em>「框选校准」</em>，在当前图幅内拖一个框，
+        <em>框线贴齐格线</em>、横平竖直地罩住整数格（多多益善，越大的框越准），
+        松手后填入框住的列数 × 行数即可。</p>
+        <div class="kbd-hint">
+          方向键 <kbd>←</kbd><kbd>→</kbd><kbd>↑</kbd><kbd>↓</kbd> 平移原点 1px<br>
+          <kbd>[</kbd> <kbd>]</kbd> 调整格子尺寸 ±0.1px
+        </div>
+      </div>
+      <div class="card">
+        <h3>精密微调</h3>
+        <div class="grid2" id="fineGrid">
+          <div class="field"><label>原点 X (px)</label><input type="number" id="inOX" step="0.1" disabled></div>
+          <div class="field"><label>原点 Y (px)</label><input type="number" id="inOY" step="0.1" disabled></div>
+          <div class="field"><label>格宽 (px/格)</label><input type="number" id="inCX" step="0.1" disabled></div>
+          <div class="field"><label>格高 (px/格)</label><input type="number" id="inCY" step="0.1" disabled></div>
+        </div>
+        <div class="stat" style="margin-top:6px"><span class="k">覆盖格数</span><span class="v" id="stCells">—</span></div>
+        <button class="btn small ghost wide" id="btnSquare" style="margin-top:10px">⬛ 设为正方形（取小边）</button>
+      </div>
+      <div class="card">
+        <h3>叠加显示</h3>
+        <div class="field"><label>格线颜色</label>
+          <div class="swatches">
+            <div class="sw on" data-c="#00e5ff" style="background:#00e5ff"></div>
+            <div class="sw" data-c="#ffd54d" style="background:#ffd54d"></div>
+            <div class="sw" data-c="#ff5d8f" style="background:#ff5d8f"></div>
+            <div class="sw" data-c="#7CFC9A" style="background:#7CFC9A"></div>
+            <div class="sw" data-c="#ffffff" style="background:#ffffff"></div>
+          </div>
+        </div>
+        <div class="field"><label>不透明度 <span id="alphaVal" style="font-family:var(--mono)">55%</span></label>
+          <input type="range" id="inAlpha" min="10" max="95" value="55">
+        </div>
+      </div>
+      <button class="btn primary wide" id="btnToPag" disabled>网格无误，去分页 →</button>
+    </div>
+
+    <!-- 第3步：分页 -->
+    <div class="pstep" id="pstep2">
+      <div class="card">
+        <h3>图幅</h3>
+        <div class="scope-tabs" id="sheetTabs2"></div>
+        <p class="hint" style="margin-top:6px">切换查看各图幅的分页，印页布局每幅独立。</p>
+      </div>
+      <div class="card">
+        <h3>纸张与比例</h3>
+        <div class="grid2">
+          <div class="field"><label>纸张</label>
+            <select id="selPaper">
+              <option value="A4" selected>A4</option>
+              <option value="A3">A3</option>
+              <option value="A5">A5</option>
+              <option value="Letter">Letter</option>
+            </select>
+          </div>
+          <div class="field"><label>方向</label>
+            <div class="seg" id="segOrient">
+              <button data-o="auto" class="on">自动</button>
+              <button data-o="landscape">横向</button>
+              <button data-o="portrait">纵向</button>
+            </div>
+          </div>
+          <div class="field"><label>页边距 (mm)</label><input type="number" id="inMargin" value="10" min="0" max="30" step="1"></div>
+          <div class="field"><label>格子边长 (mm)</label><input type="number" id="inCellMM" value="25" min="10" max="60" step="0.1"></div>
+        </div>
+        <div class="field"><label>自动铺排时间隔（重叠格数）</label>
+          <div class="seg" id="segOverlap">
+            <button data-v="0">无</button>
+            <button data-v="1" class="on">1 格</button>
+            <button data-v="2">2 格</button>
+            <button data-v="3">3 格</button>
+          </div>
+        </div>
+        <div class="field"><label>边缘补齐颜色（页内不满格处）</label>
+          <div class="ctl">
+            <input type="color" id="inFill" value="#ffffff">
+          </div>
+        </div>
+        <div class="field"><label>页伸出图幅的部分</label>
+          <div class="seg" id="segBeyond">
+            <button data-v="image" class="on">用图幅外画面</button>
+            <button data-v="blank">留空（补齐色）</button>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <h3>印制统计</h3>
+        <div class="stat"><span class="k">当前图幅</span><span class="v" id="stSheetName">—</span></div>
+        <div class="stat"><span class="k">纸张尺寸</span><span class="v" id="stPaper">—</span></div>
+        <div class="stat"><span class="k">每页容纳</span><span class="v" id="stCap">—</span></div>
+        <div class="stat"><span class="k">本幅页数</span><span class="v" id="stPages">—</span></div>
+        <div class="stat"><span class="k">导出总页数</span><span class="v" id="stPagesAll">—</span></div>
+      </div>
+      <div class="card">
+        <h3>印页布局</h3>
+        <p class="hint">格线只用于确定比例（每格 <em id="cellMMLabel">25</em>mm）。印页是<em>固定纸面大小的自由矩形</em>：
+        在画布上<em>直接拖动页面色块</em>即可任意摆放（含切在格线中间），默认<em>整体移动</em>，要挪单页切「单页拖拽」。
+        页面空白处用补齐色填满。方向键可微调选中页。</p>
+        <div class="field" style="margin-top:10px"><label>拖拽模式</label>
+          <div class="seg" id="segDragMode">
+            <button data-m="one">单页拖拽</button>
+            <button data-m="all" class="on">整体拖拽</button>
+            <button data-m="pan">浏览平移</button>
+          </div>
+        </div>
+        <button class="btn wide ghost" id="btnResetBreaks">↺ 当前图幅重新自动铺排</button>
+      </div>
+      <div class="card">
+        <h3>导出范围</h3>
+        <p class="hint" style="margin-bottom:8px">各图幅是<em>独立路线</em>：默认只导出<em>当前图幅</em>，
+        切换/新建图幅时范围自动跟随；多幅合并打印点「全选」。</p>
+        <div class="btnrow" style="margin-bottom:8px">
+          <button class="btn small ghost" id="btnExpAll">全选</button>
+          <button class="btn small ghost" id="btnExpCur">仅当前图幅</button>
+        </div>
+        <div id="sheetChecks"></div>
+      </div>
+      <button class="btn primary wide" id="btnToExport">预览印页，去导出 →</button>
+    </div>
+
+    <!-- 第4步：导出 -->
+    <div class="pstep" id="pstep3">
+      <div class="card">
+        <h3>印制参数</h3>
+        <div class="grid2">
+          <div class="field"><label>分辨率 DPI</label>
+            <select id="selDPI">
+              <option value="150">150 快速</option>
+              <option value="300" selected>300 标准</option>
+              <option value="600">600 高清·大</option>
+            </select>
+          </div>
+          <div class="field"><label>格式</label>
+            <div style="display:flex;gap:14px;align-items:center;height:30px">
+              <label style="display:flex;gap:5px;align-items:center;font-size:12px;color:var(--ink-dim)"><input type="checkbox" id="fmtPDF" checked>PDF</label>
+              <label style="display:flex;gap:5px;align-items:center;font-size:12px;color:var(--ink-dim)"><input type="checkbox" id="fmtPNG" checked>PNG</label>
+            </div>
+          </div>
+        </div>
+        <label style="display:flex;gap:7px;align-items:center;font-size:12.5px;color:var(--ink-dim);cursor:pointer;margin-top:4px">
+          <input type="checkbox" id="skipBlank" checked>自动跳过空白页（如纯海域）
+        </label>
+      </div>
+      <div class="card">
+        <h3>印页预览</h3>
+        <p class="hint" style="margin-bottom:9px">点缩略图可<em>剔除</em>不需要印的页（再次点击恢复）。画布页码也可点击操作。</p>
+        <div class="scope-tabs" id="sheetTabs3"></div>
+        <div class="pagelist" id="pageList"></div>
+      </div>
+      <button class="btn primary wide" id="btnExport">⚒ 开始印制导出</button>
+      <div class="card">
+        <h3>打印要诀</h3>
+        <p class="hint">打印 PDF 时务必选择<em>「实际大小」或缩放 100%</em>（勿选"适合页面"）。
+        印好后按页码与重叠列拼接，每格即为 2.5cm，可直摆 mini。</p>
+      </div>
+    </div>
+
+  </aside>
+</main>
+
+<div id="toast"></div>
+
+<div class="modal" id="progress">
+  <div class="box">
+    <h3 id="pTitle">正在印制…</h3>
+    <div id="pbar"><div id="pfill"></div></div>
+    <div id="ptext">准备中</div>
+    <div id="pdone"><button class="btn primary" id="pClose">完成</button></div>
+  </div>
+</div>
+
+<!-- 单页弹窗 -->
+<div class="modal" id="pageModal">
+  <div class="box">
+    <h3 id="pmTitle">单页预览</h3>
+    <canvas id="pmCanvas"></canvas>
+    <div id="pmBtns">
+      <button class="btn" id="pmToggle">不打印此页</button>
+      <button class="btn ghost" id="pmDownload">↓ 下载本页 PNG</button>
+      <button class="btn primary" id="pmClose">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- 复制格子来源选择 -->
+<div class="modal" id="gridSrcModal">
+  <div class="box" style="width:320px">
+    <h3>沿用哪个图幅的格子？</h3>
+    <div id="gridSrcList" style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px"></div>
+    <button class="btn ghost" id="gridSrcCancel">取消</button>
+  </div>
+</div>
+
+<!-- 使用指南弹窗 -->
+<div class="modal" id="helpModal">
+  <div class="box">
+    <h3>⚔ 四步印制指南</h3>
+    <div class="gstep"><div class="gnum">1</div><div>
+      <b>上传地图</b>
+      <p>把地图文件（WEBP / PNG / JPG）拖进左侧画布，或点击画布中央选择文件。所有处理均在本地完成，地图不会被上传。</p>
+    </div></div>
+    <div class="gstep"><div class="gnum">2</div><div>
+      <b>图幅校准</b>
+      <p>先点「识别网格线」自动识别；不准就用工具栏「框选校准」：拖一个横平竖直、贴齐格线的框罩住整数格，填入列数×行数（框越大越准）。多层甲板地图可「＋ 分割新图幅」分别处理。</p>
+    </div></div>
+    <div class="gstep"><div class="gnum">3</div><div>
+      <b>分页编排</b>
+      <p>选纸张（A4/A3/A5/Letter）、页边距，每格边长默认 25mm。页框可在画布上直接拖拽摆放；「间隔」留 1–2 格重叠列，拼接最稳。</p>
+    </div></div>
+    <div class="gstep"><div class="gnum">4</div><div>
+      <b>导出印制</b>
+      <p>选 DPI 与格式（PDF/PNG）后开始导出。打印 PDF 务必选「实际大小 / 100% 缩放」，印好后按页码与重叠列拼接。</p>
+    </div></div>
+    <h3 class="faq-h">常见疑问</h3>
+    <details class="qa"><summary>网格识别不准怎么办？</summary>
+      <p>自动识别依赖清晰、横平竖直的格线，斜图或无格线地图可能失败或偏移。改用「框选校准」手动框住整数格；之后方向键可平移原点、[ ] 微调格子尺寸。</p>
+    </details>
+    <details class="qa"><summary>页与页之间怎么衔接？</summary>
+      <p>「自动铺排时间隔」即相邻页的重叠格数（无/1/2/3 格，默认 1 格）。留 1–2 格按重叠列对齐粘贴最稳；选「无」最省纸但需严格对边裁切。</p>
+    </details>
+    <details class="qa"><summary>为什么每格正好 2.5cm？</summary>
+      <p>DND 5e 一格 = 5 尺，官方地牢格标准 1 英寸 = 25.4mm，恰好放一英寸底 mini。工具按「格子边长 (mm)」精确缩放（默认 25），只要打印时不缩放，落纸尺寸分毫不差。</p>
+    </details>
+    <details class="qa"><summary>纸张怎么选？</summary>
+      <p>家用打印机选 A4；图大幅多选 A3 省纸省事；Letter 为北美规格。方向选「自动」按图幅长宽自选横竖。</p>
+    </details>
+    <button class="btn primary" id="helpClose">明白了，开工</button>
+  </div>
+</div>
+
+<input type="file" id="fileInput" accept="image/webp,image/png,image/jpeg,image/*" hidden>
+
+<script>
+'use strict';
+/* ============================================================
+ * GRIDBOUND v3 —— DND 战斗地图精确印制工具
+ * 单文件 · 零依赖 · 完全离线
+ * 核心概念：
+ *   Sheet 图幅 = 图上一块矩形 + 自己的网格校准 + 自己的印页布局
+ *   Page  印页 = 固定纸面尺寸的自由矩形（格线只定比例，每格 cellMM mm）
+ * ============================================================ */
+
+/* ==== state ==== */
+const S = {
+  bitmap: null,          // 原始全分辨率位图
+  preview: null,         // 预览用降采样 canvas
+  previewScale: 1,       // preview 像素 = 全分辨率像素 * previewScale
+  fileName: '',
+
+  sheets: [],            // Sheet 数组，sheets[0] = 全图
+  activeSheet: 0,
+  sheetSeq: 1,
+
+  overlay: { color: '#00e5ff', alpha: 0.55, showGrid: true, showPages: true },
+  cal: { sel: null, cols: 10, rows: 10 },   // sel: {x0,y0,x1,y1} 全分辨率px
+
+  paper: { size: 'A4', orient: 'auto', margin: 10, cellMM: 25, overlap: 1, fill: '#ffffff', beyond: 'image' },
+  PAPER_MM: { A4: [210, 297], A3: [297, 420], A5: [148, 210], Letter: [216, 279.9] },
+
+  sheetExport: {},       // sheet.id -> bool（默认 true）
+
+  step: 0,
+  tool: 'pan',
+  dragMode: 'all',      // one=单页拖拽 all=整体拖拽 pan=浏览平移（默认整体）
+  activePage: null,     // 方向键微调目标
+  dpi: 300,
+  drag: null,
+};
+const MM_PT = 72 / 25.4;
+const AG = () => S.sheets[S.activeSheet];
+
+/* ==== utils ==== */
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+
+function toast(msg, type = '') {
+  const t = $('#toast');
+  t.textContent = msg;
+  t.className = 'show ' + type;
+  clearTimeout(t._tm);
+  t._tm = setTimeout(() => t.className = '', 3200);
+}
+function toBlob(canvas, type, q) {
+  return new Promise(res => canvas.toBlob(res, type, q));
+}
+function downloadBlob(blob, name) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = name;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 4000);
+}
+
+/* CRC32 —— zip 用 */
+const CRC_TABLE = (() => {
+  const t = new Uint32Array(256);
+  for (let n = 0; n < 256; n++) {
+    let c = n;
+    for (let k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+    t[n] = c >>> 0;
+  }
+  return t;
+})();
+function crc32(bytes) {
+  let c = 0xFFFFFFFF;
+  for (let i = 0; i < bytes.length; i++) c = CRC_TABLE[(c ^ bytes[i]) & 0xFF] ^ (c >>> 8);
+  return (c ^ 0xFFFFFFFF) >>> 0;
+}
+
+/* 高质量缩放绘制：超过 2 倍下采样时逐级减半，避免摩尔纹 */
+function drawScaled(src, sx, sy, sw, sh, ctx, dx, dy, dw, dh) {
+  let cur = src, csx = sx, csy = sy, csw = sw, csh = sh;
+  while (csw > dw * 2.2 && csh > dh * 2.2) {
+    const t = document.createElement('canvas');
+    t.width = Math.max(1, Math.round(csw / 2));
+    t.height = Math.max(1, Math.round(csh / 2));
+    const tc = t.getContext('2d');
+    tc.imageSmoothingEnabled = true; tc.imageSmoothingQuality = 'high';
+    tc.drawImage(cur, csx, csy, csw, csh, 0, 0, t.width, t.height);
+    cur = t; csx = 0; csy = 0; csw = t.width; csh = t.height;
+  }
+  ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(cur, csx, csy, csw, csh, dx, dy, dw, dh);
+}
+
+/* 判断页面是否接近空白（渲染后调用） */
+function isBlankPage(canvas) {
+  const t = document.createElement('canvas');
+  t.width = 48; t.height = Math.max(1, Math.round(48 * canvas.height / canvas.width));
+  const c = t.getContext('2d');
+  c.drawImage(canvas, 0, 0, t.width, t.height);
+  const d = c.getImageData(0, 0, t.width, t.height).data;
+  let min = 255, max = 0;
+  for (let i = 0; i < d.length; i += 4) {
+    const v = (d[i] + d[i + 1] + d[i + 2]) / 3;
+    if (v < min) min = v; if (v > max) max = v;
+  }
+  return (max - min) < 14 && max > 235;
+}
+
+/* ==== sheet 基础 ==== */
+function makeSheet(name, x0, y0, x1, y1) {
+  return {
+    id: S.sheetSeq++, name,
+    x0, y0, x1, y1,
+    grid: { valid: false, ox: 0, oy: 0, cx: 50, cy: 50 },
+    paper: null,             // 每图幅独立的纸张参数（创建时由模板/当前图幅拷贝）
+    pages: null,             // [{x, y}] 图像px 左上角；尺寸由 pagePixSize 派生
+    _manualPages: false,
+    _badges: [],             // 画布页码徽章屏幕坐标缓存
+  };
+}
+
+/* 网格在图幅内的覆盖范围（绝对格索引，含原点左/上负向格） */
+function sheetExtent(sh) {
+  const g = sh.grid;
+  const c0 = Math.ceil((sh.x0 - g.ox) / g.cx);
+  const c1 = Math.floor((sh.x1 - g.ox) / g.cx);
+  const r0 = Math.ceil((sh.y0 - g.oy) / g.cy);
+  const r1 = Math.floor((sh.y1 - g.oy) / g.cy);
+  return { c0, r0, ncols: Math.max(1, c1 - c0), nrows: Math.max(1, r1 - r0) };
+}
+
+/* ==== image-loader ==== */
+async function loadFile(file) {
+  if (!file || !/^image\//.test(file.type)) { toast('请选择图片文件', 'err'); return; }
+  let bmp;
+  try { bmp = await createImageBitmap(file); }
+  catch (e) { toast('无法解码该图片：' + file.name, 'err'); return; }
+
+  const mp = (bmp.width * bmp.height) / 1e6;
+  if (mp > 120) toast(`图片过大（${mp.toFixed(0)} 百万像素），可能内存不足`, 'warn');
+
+  S.bitmap = bmp;
+  S.fileName = file.name.replace(/\.[^.]+$/, '');
+  buildPreview();
+  buildEdgeProjections();
+  resetAfterImage();
+  setStep(1);
+  toast(`已载入 ${file.name}（${bmp.width}×${bmp.height}）`);
+  detectSheet(S.sheets[0], true);
+}
+
+function buildPreview() {
+  const MAXW = 1600;
+  const k = Math.min(1, MAXW / S.bitmap.width);
+  const c = document.createElement('canvas');
+  c.width = Math.max(1, Math.round(S.bitmap.width * k));
+  c.height = Math.max(1, Math.round(S.bitmap.height * k));
+  const ctx = c.getContext('2d', { willReadFrequently: true });
+  ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(S.bitmap, 0, 0, c.width, c.height);
+  S.preview = c;
+  S.previewScale = c.width / S.bitmap.width;
+}
+
+/* Sobel 行/列边缘投影：全图算一次缓存，各图幅识别时按幅裁剪 */
+function buildEdgeProjections() {
+  const pw = S.preview.width, ph = S.preview.height;
+  const ctx = S.preview.getContext('2d', { willReadFrequently: true });
+  const img = ctx.getImageData(0, 0, pw, ph).data;
+  const N = pw * ph;
+  const gray = new Float32Array(N);
+  for (let i = 0, j = 0; i < N; i++, j += 4)
+    gray[i] = 0.299 * img[j] + 0.587 * img[j + 1] + 0.114 * img[j + 2];
+
+  const projX = new Float64Array(pw), projY = new Float64Array(ph);
+  for (let y = 1; y < ph - 1; y++) {
+    const row = y * pw;
+    for (let x = 1; x < pw - 1; x++) {
+      const i = row + x;
+      const gx =
+        -gray[i - pw - 1] - 2 * gray[i - 1] - gray[i + pw - 1] +
+        gray[i - pw + 1] + 2 * gray[i + 1] + gray[i + pw + 1];
+      const gy =
+        -gray[i - pw - 1] - 2 * gray[i - pw] - gray[i - pw + 1] +
+        gray[i + pw - 1] + 2 * gray[i + pw] + gray[i + pw + 1];
+      const ax = Math.abs(gx), ay = Math.abs(gy);
+      if (ax > ay) projX[x] += ax; else projY[y] += ay;
+    }
+  }
+  /* 压掉全图边缘 2%（外框强线） */
+  const mx = Math.round(pw * 0.02), my = Math.round(ph * 0.02);
+  for (let x = 0; x < mx; x++) projX[x] = projX[pw - 1 - x] = 0;
+  for (let y = 0; y < my; y++) projY[y] = projY[ph - 1 - y] = 0;
+  S._edge = { projX, projY, pw, ph };
+}
+
+function resetAfterImage() {
+  S.sheetSeq = 1;
+  S.sheets = [makeSheet('全图', 0, 0, S.bitmap.width, S.bitmap.height)];
+  S.sheets[0].paper = { ...S.paper };
+  S.activeSheet = 0;
+  S.activePage = null;
+  S.sheetExport = { 1: true };
+  S.cal.sel = null;
+  S.thumbScope = null;
+  Object.keys(pageSkip).forEach(k => delete pageSkip[k]);
+  $('#detectStat').innerHTML = '';
+  updateFineInputs(); updateStatus(); renderSheetTabs();
+  fitView();
+}
+
+/* ==== viewer ==== */
+const view = $('#view');
+const vctx = view.getContext('2d');
+const V = { k: 1, x: 0, y: 0 };   // 屏幕 px = 全分辨率 px * V.k + V.x/y
+
+function resizeView() {
+  const r = $('#canvasWrap').getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  view.width = Math.round(r.width * dpr);
+  view.height = Math.round(r.height * dpr);
+  view._w = r.width; view._h = r.height; view._dpr = dpr;
+  requestRender();
+}
+new ResizeObserver(resizeView).observe($('#canvasWrap'));
+
+function fitView() {
+  if (!S.bitmap) return;
+  const w = view._w || 800, h = view._h || 600;
+  V.k = Math.min(w / S.bitmap.width, h / S.bitmap.height) * 0.92;
+  V.x = (w - S.bitmap.width * V.k) / 2;
+  V.y = (h - S.bitmap.height * V.k) / 2;
+  requestRender();
+}
+const f2sx = fx => fx * V.k + V.x;
+const f2sy = fy => fy * V.k + V.y;
+const s2fx = sx => (sx - V.x) / V.k;
+const s2fy = sy => (sy - V.y) / V.k;
+
+let renderQueued = false;
+function requestRender() {
+  if (renderQueued) return;
+  renderQueued = true;
+  requestAnimationFrame(() => { renderQueued = false; render(); });
+}
+
+function render() {
+  try {
+    const dpr = view._dpr || 1;
+    vctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    vctx.clearRect(0, 0, view._w, view._h);
+    if (!S.bitmap) return;
+
+    vctx.strokeStyle = 'rgba(200,164,92,.35)';
+    vctx.lineWidth = 1;
+    vctx.strokeRect(f2sx(0) - 3, f2sy(0) - 3, S.bitmap.width * V.k + 6, S.bitmap.height * V.k + 6);
+
+    vctx.imageSmoothingQuality = 'high';
+    vctx.drawImage(S.preview, f2sx(0), f2sy(0), S.bitmap.width * V.k, S.bitmap.height * V.k);
+
+    drawSheets();                                     // 非活动图幅边界
+    drawFocusDim();                                   // 专注模式：压暗活动幅以外
+    drawAdjustHandles();                              // 调整图幅工具的边框与把手
+    if (S.overlay.showGrid && AG().grid.valid) drawGridOverlay();
+    if (S.cal.sel && S.tool === 'cal') drawCalSel();
+    if (S.step >= 2 && AG().grid.valid) drawPaginationOverlay();
+    drawSplitDrag();
+    $('#zoomPct').textContent = Math.round(V.k * 100) + '%';
+  } catch (e) {
+    console.error('渲染错误：', e);
+    if (!render._warned) { render._warned = true; toast('渲染出错：' + e.message + '（详见控制台）', 'err'); }
+  }
+}
+
+/* 专注模式：当前图幅以外压暗（全图不生效） */
+function drawFocusDim() {
+  if (S.activeSheet === 0 || !S.sheets.length) return;
+  const sh = AG();
+  const X = f2sx(sh.x0), Y = f2sy(sh.y0), W = f2sx(sh.x1) - X, H = f2sy(sh.y1) - Y;
+  const w = view._w || 800, h = view._h || 600;
+  vctx.fillStyle = 'rgba(10,8,6,.62)';
+  vctx.fillRect(0, 0, w, Math.max(0, Y));
+  vctx.fillRect(0, Y + H, w, Math.max(0, h - Y - H));
+  vctx.fillRect(0, Y, Math.max(0, X), H);
+  vctx.fillRect(X + W, Y, Math.max(0, w - X - W), H);
+  vctx.strokeStyle = 'rgba(232,201,135,.9)';
+  vctx.lineWidth = 2;
+  vctx.strokeRect(X, Y, W, H);
+}
+
+/* 视野适配到指定图幅 */
+function fitSheet(sh) {
+  const w = view._w || 800, h = view._h || 600;
+  const rw = sh.x1 - sh.x0, rh = sh.y1 - sh.y0;
+  V.k = Math.min(w / rw, h / rh) * 0.9;
+  V.x = (w - rw * V.k) / 2 - sh.x0 * V.k;
+  V.y = (h - rh * V.k) / 2 - sh.y0 * V.k;
+  requestRender();
+}
+
+/* 非活动图幅：淡色边界 + 名字 */
+function drawSheets() {
+  vctx.save();
+  S.sheets.forEach((sh, i) => {
+    if (i === S.activeSheet) return;
+    const X = f2sx(sh.x0), Y = f2sy(sh.y0), W = f2sx(sh.x1) - X, H = f2sy(sh.y1) - Y;
+    vctx.strokeStyle = sh.grid.valid ? 'rgba(143,174,138,.7)' : 'rgba(192,106,77,.7)';
+    vctx.lineWidth = 1.4;
+    vctx.setLineDash([4, 5]);
+    vctx.strokeRect(X, Y, W, H);
+    vctx.setLineDash([]);
+    vctx.font = '600 11px Consolas,monospace';
+    const label = sh.name + (sh.grid.valid ? '' : ' ·未校准');
+    const tw = vctx.measureText(label).width + 12;
+    vctx.fillStyle = 'rgba(20,18,16,.8)';
+    vctx.fillRect(X, Y - 18, tw, 17);
+    vctx.fillStyle = sh.grid.valid ? '#8fae8a' : '#c06a4d';
+    vctx.textAlign = 'left'; vctx.textBaseline = 'middle';
+    vctx.fillText(label, X + 6, Y - 9.5);
+  });
+  vctx.restore();
+}
+
+/* 网格叠加层：当前图幅内双向平铺 */
+function drawGridOverlay() {
+  const sh = AG(), g = sh.grid;
+  const x0 = f2sx(sh.x0), y0 = f2sy(sh.y0), w = f2sx(sh.x1) - x0, h = f2sy(sh.y1) - y0;
+  vctx.save();
+  vctx.strokeStyle = S.overlay.color;
+  vctx.globalAlpha = S.overlay.alpha;
+  vctx.lineWidth = 1;
+  vctx.beginPath();
+  const iMin = Math.ceil((sh.x0 - g.ox) / g.cx), iMax = Math.floor((sh.x1 - g.ox) / g.cx);
+  const jMin = Math.ceil((sh.y0 - g.oy) / g.cy), jMax = Math.floor((sh.y1 - g.oy) / g.cy);
+  for (let i = iMin; i <= iMax; i++) { const X = f2sx(g.ox + i * g.cx); if (X < x0 - 2 || X > x0 + w + 2) continue; vctx.moveTo(X, y0); vctx.lineTo(X, y0 + h); }
+  for (let j = jMin; j <= jMax; j++) { const Y = f2sy(g.oy + j * g.cy); if (Y < y0 - 2 || Y > y0 + h + 2) continue; vctx.moveTo(x0, Y); vctx.lineTo(x0 + w, Y); }
+  vctx.stroke();
+  /* 原点标记 */
+  vctx.globalAlpha = Math.min(1, S.overlay.alpha + .3);
+  vctx.strokeStyle = '#ffffff';
+  vctx.beginPath();
+  vctx.arc(f2sx(g.ox), f2sy(g.oy), 5, 0, Math.PI * 2);
+  vctx.moveTo(f2sx(g.ox) - 9, f2sy(g.oy)); vctx.lineTo(f2sx(g.ox) + 9, f2sy(g.oy));
+  vctx.moveTo(f2sx(g.ox), f2sy(g.oy) - 9); vctx.lineTo(f2sx(g.ox), f2sy(g.oy) + 9);
+  vctx.stroke();
+  vctx.restore();
+}
+
+/* 框选校准矩形 */
+function drawCalSel() {
+  const s = S.cal.sel;
+  const X = f2sx(s.x0), Y = f2sy(s.y0), W = f2sx(s.x1) - X, H = f2sy(s.y1) - Y;
+  vctx.save();
+  vctx.strokeStyle = '#ffd54d';
+  vctx.lineWidth = 1.5;
+  vctx.setLineDash([6, 4]);
+  vctx.strokeRect(X, Y, W, H);
+  vctx.setLineDash([]);
+  vctx.fillStyle = 'rgba(255,213,77,.08)';
+  vctx.fillRect(X, Y, W, H);
+  const L = 14;
+  vctx.strokeStyle = '#ffd54d'; vctx.lineWidth = 2.5;
+  vctx.beginPath();
+  vctx.moveTo(X, Y + L); vctx.lineTo(X, Y); vctx.lineTo(X + L, Y);
+  vctx.moveTo(X + W - L, Y); vctx.lineTo(X + W, Y); vctx.lineTo(X + W, Y + L);
+  vctx.moveTo(X + W, Y + H - L); vctx.lineTo(X + W, Y + H); vctx.lineTo(X + W - L, Y + H);
+  vctx.moveTo(X + L, Y + H); vctx.lineTo(X, Y + H); vctx.lineTo(X, Y + H - L);
+  vctx.stroke();
+  vctx.restore();
+}
+
+/* 正在拖拽的新图幅 */
+function drawSplitDrag() {
+  const d = S.drag;
+  if (!d || d.type !== 'newsplit') return;
+  const X = f2sx(Math.min(d.x0, d.x1)), Y = f2sy(Math.min(d.y0, d.y1));
+  const W = Math.abs(f2sx(d.x1) - f2sx(d.x0)), H = Math.abs(f2sy(d.y1) - f2sy(d.y0));
+  vctx.save();
+  vctx.strokeStyle = '#e8c987'; vctx.lineWidth = 1.6; vctx.setLineDash([6, 4]);
+  vctx.strokeRect(X, Y, W, H);
+  vctx.setLineDash([]);
+  vctx.fillStyle = 'rgba(232,201,135,.1)';
+  vctx.fillRect(X, Y, W, H);
+  vctx.font = '600 12px Consolas,monospace';
+  vctx.fillStyle = '#e8c987';
+  vctx.fillText('新图幅', X + 6, Y + 16);
+  vctx.restore();
+}
+
+/* 调整图幅工具：当前图幅边框 + 角/边中点共 8 个拖拽把手 */
+function drawAdjustHandles() {
+  if (S.tool !== 'adjust' || !AG()) return;
+  const sh = AG();
+  const X = f2sx(sh.x0), Y = f2sy(sh.y0), W = f2sx(sh.x1) - X, H = f2sy(sh.y1) - Y;
+  vctx.save();
+  vctx.strokeStyle = '#e8c987';
+  vctx.lineWidth = 2;
+  vctx.setLineDash([7, 4]);
+  vctx.strokeRect(X, Y, W, H);
+  vctx.setLineDash([]);
+  vctx.fillStyle = '#e8c987';
+  [[X, Y], [X + W, Y], [X, Y + H], [X + W, Y + H],
+   [X + W / 2, Y], [X + W / 2, Y + H], [X, Y + H / 2], [X + W, Y + H / 2]]
+    .forEach(([hx, hy]) => vctx.fillRect(hx - 3.5, hy - 3.5, 7, 7));
+  vctx.restore();
+}
+
+/* ============ 分页（每图幅独立，纯函数按需计算） ============ */
+function paperDims(sh) {
+  const p = sh.paper || S.paper;
+  let [w, h] = S.PAPER_MM[p.size];
+  let landscape;
+  if (p.orient === 'auto') {
+    if (!sh.grid.valid) landscape = true;
+    else {
+      const { ncols, nrows } = sheetExtent(sh);
+      landscape = ncols >= nrows;
+    }
+  } else landscape = p.orient === 'landscape';
+  return landscape ? [h, w] : [w, h];   // [宽mm, 高mm]：横向 = 长边为宽
+}
+
+function pageCapacity(sh) {
+  const [pw, ph] = paperDims(sh);
+  const p = sh.paper || S.paper;
+  return {
+    capC: Math.max(1, Math.floor((pw - 2 * p.margin) / p.cellMM)),
+    capR: Math.max(1, Math.floor((ph - 2 * p.margin) / p.cellMM)),
+    pw, ph,
+  };
+}
+
+/* ============ 印页模型（v3：自由矩形，格线只定比例） ============ */
+/* 页面可用区换算到图像像素：可用 mm × (px/mm)，px/mm 由格子比例（cx px = cellMM mm）决定 */
+function pagePixSize(sh) {
+  const [pw, ph] = paperDims(sh);
+  const p = sh.paper || S.paper;
+  const usableW = Math.max(p.cellMM, pw - 2 * p.margin);
+  const usableH = Math.max(p.cellMM, ph - 2 * p.margin);
+  const g = sh.grid;
+  return { w: usableW * g.cx / p.cellMM, h: usableH * g.cy / p.cellMM };
+}
+
+/* 自动铺排：从图幅左上角平铺，步长 = 页宽 - 重叠 */
+function autoArrange(sh) {
+  const g = sh.grid;
+  const { w, h } = pagePixSize(sh);
+  const ovx = (sh.paper || S.paper).overlap * g.cx, ovy = (sh.paper || S.paper).overlap * g.cy;
+  const stepX = Math.max(10, w - ovx), stepY = Math.max(10, h - ovy);
+  const nx = Math.max(1, Math.ceil((sh.x1 - sh.x0 - ovx) / stepX));
+  const ny = Math.max(1, Math.ceil((sh.y1 - sh.y0 - ovy) / stepY));
+  const pages = [];
+  for (let ri = 0; ri < ny; ri++)
+    for (let ci = 0; ci < nx; ci++)
+      pages.push({ x: sh.x0 + ci * stepX, y: sh.y0 + ri * stepY });
+  sh.pages = pages;
+}
+
+function ensurePages(sh) {
+  if (!sh.pages) autoArrange(sh);
+}
+
+/* 页内容的取图边界：beyond='image' 用整图（页可伸进图幅外取画面），'blank' 限制在图幅内（图幅外留空补齐色） */
+function sheetSrcBounds(sh) {
+  const pp = sh.paper || S.paper;
+  return pp.beyond === 'blank'
+    ? { x0: Math.max(0, sh.x0), y0: Math.max(0, sh.y0), x1: Math.min(S.bitmap.width, sh.x1), y1: Math.min(S.bitmap.height, sh.y1) }
+    : { x0: 0, y0: 0, x1: S.bitmap.width, y1: S.bitmap.height };
+}
+
+/* 页列表（含换算后的像素尺寸），拖拽改 sh.pages[i].x/y */
+function sheetPages(sh) {
+  if (!sh.grid.valid) return [];
+  ensurePages(sh);
+  const { w, h } = pagePixSize(sh);
+  return sh.pages.map(p => ({ x: p.x, y: p.y, w, h }));
+}
+
+/* ============ 画布叠加：印页（自由矩形） ============ */
+/* 留空区斜纹图案（页伸出图幅外、将被补齐色填充的部分） */
+let _hatch = null;
+function hatchPattern() {
+  if (_hatch) return _hatch;
+  const c = document.createElement('canvas');
+  c.width = c.height = 8;
+  const x = c.getContext('2d');
+  x.strokeStyle = 'rgba(20,16,10,.55)';
+  x.lineWidth = 1.6;
+  x.beginPath();
+  x.moveTo(-2, 10); x.lineTo(10, -2);
+  x.moveTo(-2, 2); x.lineTo(2, -2);
+  x.moveTo(6, 10); x.lineTo(10, 6);
+  x.stroke();
+  _hatch = vctx.createPattern(c, 'repeat');
+  return _hatch;
+}
+
+function drawPaginationOverlay() {
+  if (!S.overlay.showPages) return;
+  const sh = AG();
+  const pages = sheetPages(sh);
+  const blank = (sh.paper || S.paper).beyond === 'blank';
+  const b = blank ? sheetSrcBounds(sh) : null;
+  vctx.save();
+
+  const FILLS = ['rgba(0,170,255,.16)', 'rgba(255,140,50,.16)'];
+  sh._badges = [];
+  pages.forEach((p, i) => {
+    const X = f2sx(p.x), Y = f2sy(p.y), W = p.w * V.k, H = p.h * V.k;
+    if (W < 2 || H < 2) return;
+    vctx.fillStyle = FILLS[i % 2];
+    vctx.fillRect(X, Y, W, H);
+    if (blank) {
+      /* 页 ∩ 取图边界之外 → 斜纹提示此处留空 */
+      const bx0 = f2sx(Math.max(p.x, b.x0)), bx1 = f2sx(Math.min(p.x + p.w, b.x1));
+      const by0 = f2sy(Math.max(p.y, b.y0)), by1 = f2sy(Math.min(p.y + p.h, b.y1));
+      vctx.fillStyle = hatchPattern();
+      [[X, Y, bx0 - X, H], [bx1, Y, X + W - bx1, H],
+       [bx0, Y, bx1 - bx0, by0 - Y], [bx0, by1, bx1 - bx0, Y + H - by1]]
+        .forEach(([hx, hy, hw, hh]) => { if (hw > 1 && hh > 1) vctx.fillRect(hx, hy, hw, hh); });
+    }
+    const sel = S.activePage === i && S.step === 2;
+    vctx.lineWidth = sel ? 3 : 2;
+    vctx.strokeStyle = sel ? '#ffdd57' : 'rgba(0,0,0,.55)';
+    vctx.strokeRect(X, Y, W, H);
+    vctx.lineWidth = 1;
+    vctx.strokeStyle = 'rgba(255,255,255,.95)';
+    vctx.strokeRect(X, Y, W, H);
+    if (W > 20 && H > 14) {
+      const fs = clamp(W / 6, 11, 18);
+      vctx.font = `700 ${fs}px Consolas,monospace`;
+      const label = String(i + 1);
+      const tw = vctx.measureText(label).width;
+      const bx = X + W / 2, by = Y + H / 2, pad = fs * 0.35;
+      vctx.fillStyle = 'rgba(15,13,10,.88)';
+      vctx.fillRect(bx - tw / 2 - pad, by - fs * 0.75, tw + pad * 2, fs * 1.5);
+      vctx.fillStyle = pageSkip[`${sh.id}_${i}`] ? '#8a8a8a' : '#ffdd57';
+      vctx.textAlign = 'center'; vctx.textBaseline = 'middle';
+      vctx.fillText(label, bx, by);
+      sh._badges.push({ x: bx - tw / 2 - pad, y: by - fs * 0.75, w: tw + pad * 2, h: fs * 1.5, idx: i });
+    }
+  });
+  vctx.restore();
+}
+
+/* ============ 指针交互 ============ */
+/* 图幅命中测试（调整图幅工具）：8px 屏幕阈值判边/角，图幅内部=整体移动 */
+function sheetHit(fx, fy, sh) {
+  const th = 8 / V.k;
+  if (!(fx > sh.x0 - th && fx < sh.x1 + th && fy > sh.y0 - th && fy < sh.y1 + th)) return null;
+  const l = Math.abs(fx - sh.x0) <= th, r = Math.abs(fx - sh.x1) <= th;
+  const t = Math.abs(fy - sh.y0) <= th, b = Math.abs(fy - sh.y1) <= th;
+  if (l || r || t || b) return { type: 'sheetResize', l, r, t, b };
+  if (fx > sh.x0 && fx < sh.x1 && fy > sh.y0 && fy < sh.y1) return { type: 'sheetMove', l: false, r: false, t: false, b: false };
+  return null;
+}
+
+view.addEventListener('pointerdown', e => {
+  if (!S.bitmap) return;
+  view.setPointerCapture(e.pointerId);
+  const sx = e.offsetX, sy = e.offsetY;
+  const fx = s2fx(sx), fy = s2fy(sy);
+  const sh = AG();
+
+  /* 印页命中：拖动单页或整体（v3 自由矩形模型）；校准/分割工具优先 */
+  if (S.step === 2 && S.tool === 'pan' && sh.grid.valid && S.overlay.showPages && S.dragMode !== 'pan') {
+    const pgs = sheetPages(sh);
+    for (let i = pgs.length - 1; i >= 0; i--) {
+      const p = pgs[i];
+      if (fx >= p.x && fx <= p.x + p.w && fy >= p.y && fy <= p.y + p.h) {
+        S.activePage = i;
+        if (S.dragMode === 'all') {
+          S.drag = { type: 'pagesAll', fx0: fx, fy0: fy, downX: sx, downY: sy, snap: sh.pages.map(q => ({ x: q.x, y: q.y })), moved: false };
+        } else {
+          S.drag = { type: 'page', i, dx: p.x - fx, dy: p.y - fy, downX: sx, downY: sy, moved: false };
+        }
+        requestRender(); return;
+      }
+    }
+  }
+
+  if (S.tool === 'cal' && sh) {
+    S.drag = { type: 'calsel', x0: fx, y0: fy, x1: fx, y1: fy };
+    S.cal.sel = null;
+    $('#calPop').classList.remove('show');
+  } else if (S.tool === 'split') {
+    S.drag = { type: 'newsplit', x0: fx, y0: fy, x1: fx, y1: fy };
+  } else if (S.tool === 'adjust' && sh) {
+    const hit = sheetHit(fx, fy, sh);
+    if (hit) {
+      S.drag = {
+        type: hit.type, l: hit.l, r: hit.r, t: hit.t, b: hit.b,
+        x0: sh.x0, y0: sh.y0, x1: sh.x1, y1: sh.y1,
+        fx0: fx, fy0: fy, downX: sx, downY: sy, moved: false,
+        manual: sh._manualPages,
+        snap: sh.pages ? sh.pages.map(q => ({ x: q.x, y: q.y })) : null,
+        hadPages: !!sh.pages,
+      };
+    } else {
+      S.drag = { type: 'pan', sx, sy, vx: V.x, vy: V.y, downX: sx, downY: sy, moved: false };
+      view.classList.add('dragging');
+    }
+  } else {
+    S.drag = { type: 'pan', sx, sy, vx: V.x, vy: V.y, downX: sx, downY: sy, moved: false };
+    view.classList.add('dragging');
+  }
+  requestRender();
+});
+
+view.addEventListener('pointermove', e => {
+  const sx = e.offsetX, sy = e.offsetY;
+  updateCursorStat(sx, sy);
+  const d = S.drag;
+  if (!d) {
+    /* 调整图幅工具的光标反馈：边/角=缩放，内部=移动 */
+    if (S.tool === 'adjust' && S.bitmap && AG()) {
+      const sh = AG();
+      const h = sheetHit(s2fx(sx), s2fy(sy), sh);
+      view.style.cursor = !h ? '' :
+        (h.l && h.t) || (h.r && h.b) ? 'nwse-resize' :
+        (h.l && h.b) || (h.r && h.t) ? 'nesw-resize' :
+        (h.l || h.r) ? 'ew-resize' :
+        (h.t || h.b) ? 'ns-resize' : 'move';
+      return;
+    }
+    /* 悬停光标提示 */
+    if (S.bitmap && S.sheets.length && S.step === 2 && AG().grid.valid) {
+      const sh = AG();
+      let cursor = '';
+      if (S.overlay.showPages && (sh._badges || []).some(b => sx >= b.x && sx <= b.x + b.w && sy >= b.y && sy <= b.y + b.h)) cursor = 'pointer';
+      else if (S.overlay.showPages && S.dragMode !== 'pan') {
+        const fx2 = s2fx(sx), fy2 = s2fy(sy);
+        if (sheetPages(sh).some(p => fx2 >= p.x && fx2 <= p.x + p.w && fy2 >= p.y && fy2 <= p.y + p.h)) cursor = S.dragMode === 'all' ? 'move' : 'grab';
+      }
+      view.style.cursor = cursor;
+    }
+    return;
+  }
+  if (d.type === 'pan') {
+    const dx = sx - d.sx, dy = sy - d.sy;
+    if (Math.abs(dx) + Math.abs(dy) > 3) d.moved = true;
+    V.x = d.vx + dx; V.y = d.vy + dy;
+    requestRender();
+  } else if (d.type === 'calsel') {
+    const sh = AG();
+    d.x1 = clamp(s2fx(sx), sh.x0, sh.x1);
+    d.y1 = clamp(s2fy(sy), sh.y0, sh.y1);
+    S.cal.sel = { x0: clamp(Math.min(d.x0, d.x1), sh.x0, sh.x1), y0: clamp(Math.min(d.y0, d.y1), sh.y0, sh.y1), x1: clamp(Math.max(d.x0, d.x1), sh.x0, sh.x1), y1: clamp(Math.max(d.y0, d.y1), sh.y0, sh.y1) };
+    requestRender();
+  } else if (d.type === 'newsplit') {
+    d.x1 = clamp(s2fx(sx), 0, S.bitmap.width);
+    d.y1 = clamp(s2fy(sy), 0, S.bitmap.height);
+    requestRender();
+  } else if (d.type === 'page') {
+    const sh = AG();
+    if (Math.abs(sx - d.downX) + Math.abs(sy - d.downY) > 3) d.moved = true;
+    if (!d.moved) return;
+    const q = sh.pages[d.i];
+    if (!q) return;
+    q.x = s2fx(sx) + d.dx;
+    q.y = s2fy(sy) + d.dy;
+    sh._manualPages = true;
+    view.style.cursor = 'grabbing';
+    requestRender();
+  } else if (d.type === 'pagesAll') {
+    const sh = AG();
+    if (Math.abs(sx - d.downX) + Math.abs(sy - d.downY) > 3) d.moved = true;
+    if (!d.moved) return;
+    const dfx = s2fx(sx) - d.fx0, dfy = s2fy(sy) - d.fy0;
+    sh.pages.forEach((q, i) => { q.x = d.snap[i].x + dfx; q.y = d.snap[i].y + dfy; });
+    sh._manualPages = true;
+    view.style.cursor = 'move';
+    requestRender();
+  } else if (d.type === 'sheetMove') {
+    const sh = AG();
+    if (Math.abs(sx - d.downX) + Math.abs(sy - d.downY) > 3) d.moved = true;
+    if (!d.moved) return;
+    /* 图幅是图像上的裁剪窗口：格线为绝对坐标，原点不动仍贴线，仅矩形平移 */
+    const dx = clamp(s2fx(sx) - d.fx0, -d.x0, S.bitmap.width - d.x1);
+    const dy = clamp(s2fy(sy) - d.fy0, -d.y0, S.bitmap.height - d.y1);
+    sh.x0 = d.x0 + dx; sh.x1 = d.x1 + dx;
+    sh.y0 = d.y0 + dy; sh.y1 = d.y1 + dy;
+    if (d.manual && d.snap) sh.pages = d.snap.map(q => ({ x: q.x + dx, y: q.y + dy }));  // 手工页布局跟随
+    else sh.pages = null;   // 自动铺排的按新位置重排
+    view.style.cursor = 'move';
+    requestRender();
+  } else if (d.type === 'sheetResize') {
+    const sh = AG();
+    if (Math.abs(sx - d.downX) + Math.abs(sy - d.downY) > 3) d.moved = true;
+    if (!d.moved) return;
+    let { x0, y0, x1, y1 } = d;
+    if (d.l) x0 = clamp(s2fx(sx), 0, x1 - 60);
+    if (d.r) x1 = clamp(s2fx(sx), x0 + 60, S.bitmap.width);
+    if (d.t) y0 = clamp(s2fy(sy), 0, y1 - 60);
+    if (d.b) y1 = clamp(s2fy(sy), y0 + 60, S.bitmap.height);
+    if (x0 !== sh.x0 || y0 !== sh.y0 || x1 !== sh.x1 || y1 !== sh.y1) {
+      sh.x0 = x0; sh.y0 = y0; sh.x1 = x1; sh.y1 = y1;
+      if (sh.pages) { sh.pages = null; sh._manualPages = false; }   // 区域变了，重新铺排
+    }
+    requestRender();
+  }
+});
+
+view.addEventListener('pointerup', e => {
+  const d = S.drag;
+  S.drag = null;
+  view.classList.remove('dragging');
+  if (!d) return;
+  const sx = e.offsetX, sy = e.offsetY;
+  const moved = d.moved || Math.abs(sx - (d.downX ?? sx)) + Math.abs(sy - (d.downY ?? sy)) > 4;
+
+  if (d.type === 'calsel') {
+    const s = S.cal.sel;
+    if (!s || f2sx(s.x1) - f2sx(s.x0) < 12 || f2sy(s.y1) - f2sy(s.y0) < 12) {
+      S.cal.sel = null; requestRender(); return;
+    }
+    showCalPop(s);
+  } else if (d.type === 'newsplit') {
+    addSheetFromDrag(d);
+  } else if (d.type === 'sheetMove' || d.type === 'sheetResize') {
+    if (d.moved) {
+      updateFineInputs(); updatePagStats(); renderSheetChecks();
+      if (d.type === 'sheetResize' && d.hadPages) toast('图幅尺寸变化，印页已重新自动铺排，可再手动调整');
+    }
+  } else if ((d.type === 'page' || d.type === 'pagesAll' || d.type === 'pan') && !moved) {
+    /* 点击页码徽章 → 单页弹窗 */
+    const sh = AG();
+    if (S.step >= 2 && sh.grid.valid && S.overlay.showPages) {
+      const hit = (sh._badges || []).find(b => sx >= b.x && sx <= b.x + b.w && sy >= b.y && sy <= b.y + b.h);
+      if (hit) openPageModal(sh, hit.idx);
+    } else if (d.type === 'page') {
+      S.activePage = d.i;   // 仅选中，供方向键微调
+      requestRender();
+    }
+  }
+  requestRender();
+});
+
+view.addEventListener('wheel', e => {
+  if (!S.bitmap) return;
+  e.preventDefault();
+  const sx = e.offsetX, sy = e.offsetY;
+  const k2 = clamp(V.k * Math.exp(-e.deltaY * 0.0012), 0.005, 40);
+  V.x = sx - (sx - V.x) * (k2 / V.k);
+  V.y = sy - (sy - V.y) * (k2 / V.k);
+  V.k = k2;
+  requestRender();
+}, { passive: false });
+
+/* 键盘：步骤1 微调网格原点/格子；步骤2 方向键微调选中印页 */
+window.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && $('#helpModal').classList.contains('show')) { closeHelp(); return; }
+  if (!S.sheets.length || /INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName)) return;
+  const step = e.shiftKey ? 10 : 1;
+  let used = true;
+
+  if (S.step === 2 && AG().grid.valid && S.activePage != null) {
+    const sh = AG();
+    const q = sh.pages && sh.pages[S.activePage];
+    if (!q) return;
+    switch (e.key) {
+      case 'ArrowLeft': q.x -= step; break;
+      case 'ArrowRight': q.x += step; break;
+      case 'ArrowUp': q.y -= step; break;
+      case 'ArrowDown': q.y += step; break;
+      default: used = false;
+    }
+    if (used) {
+      e.preventDefault();
+      sh._manualPages = true;
+      requestRender();
+    }
+    return;
+  }
+
+  if (S.step !== 1 || !AG().grid.valid) return;
+  const g = AG().grid;
+  switch (e.key) {
+    case 'ArrowLeft': g.ox -= 1; break;
+    case 'ArrowRight': g.ox += 1; break;
+    case 'ArrowUp': g.oy -= 1; break;
+    case 'ArrowDown': g.oy += 1; break;
+    case '[': g.cx -= 0.1; g.cy -= 0.1; break;
+    case ']': g.cx += 0.1; g.cy += 0.1; break;
+    default: used = false;
+  }
+  if (used) {
+    e.preventDefault();
+    g.cx = Math.max(4, g.cx); g.cy = Math.max(4, g.cy);
+    AG().pages = null;   // 比例变化，页尺寸随之变，重新铺排
+    updateFineInputs(); updateStatus(); requestRender();
+  }
+});
+
+function updateCursorStat(sx, sy) {
+  const el = $('#stCursor');
+  if (!S.bitmap) { el.textContent = '—'; return; }
+  const fx = s2fx(sx), fy = s2fy(sy);
+  if (fx < 0 || fy < 0 || fx > S.bitmap.width || fy > S.bitmap.height) { el.innerHTML = '画布外'; return; }
+  const sh = AG();
+  if (sh.grid.valid) {
+    const g = sh.grid;
+    const c = Math.floor((fx - (g.ox + Math.ceil((sh.x0 - g.ox) / g.cx) * g.cx)) / g.cx);
+    const r = Math.floor((fy - (g.oy + Math.ceil((sh.y0 - g.oy) / g.cy) * g.cy)) / g.cy);
+    el.innerHTML = `${sh.name} 格 <b>${c + 1}, ${r + 1}</b>`;
+  } else {
+    el.innerHTML = `px <b>${Math.round(fx)}, ${Math.round(fy)}</b>`;
+  }
+}
+
+/* ============ 网格识别（每图幅独立，用缓存的全图投影） ============ */
+async function detectSheet(sh, silent) {
+  if (!S.bitmap || !S._edge) return;
+  const stat = $('#detectStat');
+  if (sh === AG() && !silent) stat.innerHTML = '<span style="color:var(--gold)">识别中…</span>';
+  await new Promise(r => setTimeout(r, 30));
+
+  const ps = S.previewScale;
+  const px0 = Math.max(0, Math.round(sh.x0 * ps)), px1 = Math.min(S._edge.pw, Math.round(sh.x1 * ps));
+  const py0 = Math.max(0, Math.round(sh.y0 * ps)), py1 = Math.min(S._edge.projY.length, Math.round(sh.y1 * ps));
+  if (px1 - px0 < 40 || py1 - py0 < 40) {
+    if (sh === AG()) stat.innerHTML = '<span style="color:var(--rust)">✗ 图幅太小，无法识别，请手工框选</span>';
+    return;
+  }
+  const rx = analyzeProj(S._edge.projX.subarray(px0, px1), px1 - px0);
+  const ry = analyzeProj(S._edge.projY.subarray(py0, py1), py1 - py0);
+
+  if (sh !== AG()) return;   // 用户已切走，不覆盖状态
+
+  if (!rx || !ry || rx.conf < 0.3 || ry.conf < 0.3) {
+    const c = Math.min(rx ? rx.conf : 0, ry ? ry.conf : 0);
+    stat.innerHTML = `<span style="color:var(--rust)">✗ 未能可靠识别（置信度 ${(c * 100).toFixed(0)}%）</span><br>请使用工具栏「框选校准」手动标定`;
+    if (!silent) toast('网格线不够清晰，请手工框选校准', 'warn');
+    return;
+  }
+
+  /* 方形化：格子必为正方形，两轴周期取小边统一（大边多为倍频谐波），并按统一周期重找相位 */
+  const sq = Math.min(rx.period, ry.period);
+  const ratio = Math.max(rx.period, ry.period) / sq;
+  const orX = findOrigin(S._edge.projX.subarray(px0, px1), Math.round(sq));
+  const orY = findOrigin(S._edge.projY.subarray(py0, py1), Math.round(sq));
+
+  sh.grid = {
+    valid: true,
+    ox: (px0 + orX.origin) / ps, oy: (py0 + orY.origin) / ps,
+    cx: sq / ps, cy: sq / ps,
+  };
+  sh.pages = null;
+  const { ncols, nrows } = sheetExtent(sh);
+  const conf = Math.min(rx.conf, ry.conf);
+  stat.innerHTML =
+    `<span style="color:var(--sage)">✓ ${sh.name} 识别成功</span> · 置信度 ${(conf * 100).toFixed(0)}%<br>` +
+    `每格 ${sh.grid.cx.toFixed(1)}×${sh.grid.cy.toFixed(1)} px${ratio > 1.001 ? '（已按方形统一）' : ''}<br>` +
+    `覆盖约 ${ncols} 列 × ${nrows} 行<br>` +
+    (ratio > 1.15
+      ? `<span style="color:var(--rust)">⚠ 两轴周期相差 ${ratio.toFixed(1)}×，已按较小周期统一，请叠加核对，必要时手工校准</span><br>`
+      : '') +
+    `<span style="opacity:.75">如格线没对齐，拖框重选或用微调面板</span>`;
+  updateFineInputs(); updateStatus(); renderSheetTabs(); requestRender();
+  if (!silent) {
+    toast(ratio > 1.15
+      ? `${sh.name} 两轴周期差异大，已按小边 ${sh.grid.cx.toFixed(1)}px 方形化，请核对叠加线`
+      : `${sh.name} 网格识别成功，请核对叠加线是否贴合`, ratio > 1.15 ? 'warn' : '');
+  }
+}
+
+/* 单轴投影分析：自相关找周期（输入为幅内子序列） */
+function analyzeProj(p, len) {
+  let mean = 0; for (let i = 0; i < len; i++) mean += p[i];
+  mean /= len;
+  let energy = 0;
+  const q = new Float64Array(len);
+  for (let i = 0; i < len; i++) { q[i] = p[i] - mean; energy += q[i] * q[i]; }
+  if (energy < 1e-6) return null;
+
+  const minLag = Math.max(6, Math.floor(len / 300));
+  const maxLag = Math.floor(len / 6);
+  let bestLag = -1, bestR = 0;
+  const rs = new Float64Array(maxLag + 1);
+  for (let lag = minLag; lag <= maxLag; lag++) {
+    let s = 0, e1 = 0, e2 = 0;
+    for (let i = 0; i + lag < len; i++) {
+      s += q[i] * q[i + lag];
+      e1 += q[i] * q[i]; e2 += q[i + lag] * q[i + lag];
+    }
+    const r = s / Math.sqrt(e1 * e2 + 1e-12);
+    rs[lag] = r;
+    if (r > bestR) { bestR = r; bestLag = lag; }
+  }
+  if (bestLag < 0 || bestR < 0.25) return null;
+
+  let period = bestLag;
+  if (bestLag > minLag && bestLag < maxLag) {
+    const a = rs[bestLag - 1], b = rs[bestLag], c = rs[bestLag + 1];
+    const denom = a - 2 * b + c;
+    if (Math.abs(denom) > 1e-9) period = bestLag + 0.5 * (a - c) / denom;
+  }
+
+  /* 相位对齐质量参与置信度 */
+  const or0 = findOrigin(p, len, Math.max(4, Math.round(period)));
+  const conf = clamp(0.55 * bestR + 0.45 * or0.phaseScore, 0, 1);
+  return { period, conf };
+}
+
+/* 按给定周期做相位对齐找原点：投影值最大的偏移即格线位置 */
+function findOrigin(p, len, per) {
+  let bestO = 0, bestS = -1;
+  const sums = [];
+  for (let o = 0; o < per; o++) {
+    let s = 0, n = 0;
+    for (let x = o; x < len; x += per) { s += p[x]; n++; }
+    const v = s / Math.sqrt(n);
+    sums.push(v);
+    if (v > bestS) { bestS = v; bestO = o; }
+  }
+  sums.sort((a, b) => b - a);
+  const phaseScore = sums.length > 3 ? clamp((sums[0] - sums[3]) / (sums[0] + 1e-9), 0, 1) : 0.5;
+  return { origin: bestO, phaseScore };
+}
+
+/* 复制图幅格子：同一张底图上格线连续，原点+边长整套沿用即可对齐 */
+function applyGridFrom(src) {
+  const sh = AG();
+  sh.grid = { valid: true, ox: src.grid.ox, oy: src.grid.oy, cx: src.grid.cx, cy: src.grid.cy };
+  sh.pages = null;
+  updateFineInputs(); updateStatus(); renderSheetTabs(); requestRender();
+  const { ncols, nrows } = sheetExtent(sh);
+  $('#detectStat').innerHTML =
+    `<span style="color:var(--sage)">✓ ${sh.name} 已沿用 ${src.name} 的格子</span><br>` +
+    `每格 ${sh.grid.cx.toFixed(1)}×${sh.grid.cy.toFixed(1)} px · 覆盖约 ${ncols}×${nrows} 格`;
+  toast(`${sh.name} 已沿用 ${src.name} 的网格校准`);
+}
+
+$('#btnCopyGrid').addEventListener('click', () => {
+  const cands = S.sheets.filter(s => s !== AG() && s.grid.valid);
+  if (!cands.length) { toast('没有其他已校准的图幅可复制', 'warn'); return; }
+  if (cands.length === 1) { applyGridFrom(cands[0]); return; }
+  const list = $('#gridSrcList');
+  list.innerHTML = '';
+  cands.forEach(src => {
+    const b = document.createElement('button');
+    b.className = 'btn small ghost wide';
+    b.textContent = `${src.name} · 每格 ${src.grid.cx.toFixed(1)}×${src.grid.cy.toFixed(1)} px`;
+    b.addEventListener('click', () => { $('#gridSrcModal').classList.remove('show'); applyGridFrom(src); });
+    list.appendChild(b);
+  });
+  $('#gridSrcModal').classList.add('show');
+});
+$('#gridSrcCancel').addEventListener('click', () => $('#gridSrcModal').classList.remove('show'));
+$('#gridSrcModal').addEventListener('click', e => { if (e.target === e.currentTarget) $('#gridSrcCancel').click(); });
+
+/* ============ 手工校准 ============ */
+function showCalPop(s) {
+  const pop = $('#calPop');
+  const wrap = $('#canvasWrap').getBoundingClientRect();
+  let X = f2sx(s.x1) + 12, Y = clamp(f2sy(s.y0), 8, wrap.height - 230);
+  if (X + 240 > wrap.width) X = f2sx(s.x0) - 240;
+  pop.style.left = X + 'px'; pop.style.top = Y + 'px';
+  pop.classList.add('show');
+  updateCalPreview();
+  $('#calCols').focus(); $('#calCols').select();
+}
+
+/* 实时预览每格尺寸 + 方形偏差警告（格子应为正方形，偏差大说明框歪或行列数数错） */
+function updateCalPreview() {
+  const s = S.cal.sel;
+  const cols = Math.round(+$('#calCols').value), rows = Math.round(+$('#calRows').value);
+  const warn = $('#calWarn');
+  if (!s || !cols || !rows || cols < 1 || rows < 1) {
+    $('#calInfo').textContent = s ? `框 ${Math.round(s.x1 - s.x0)}×${Math.round(s.y1 - s.y0)} px` : '';
+    warn.style.display = 'none';
+    return;
+  }
+  const cx = (s.x1 - s.x0) / cols, cy = (s.y1 - s.y0) / rows;
+  const lo = Math.min(cx, cy), ratio = Math.max(cx, cy) / lo;
+  $('#calInfo').textContent = `框 ${Math.round(s.x1 - s.x0)}×${Math.round(s.y1 - s.y0)} px · 每格 ${cx.toFixed(1)}×${cy.toFixed(1)} px`;
+  if (ratio > 1.05) {
+    warn.textContent = `⚠ 每格两边差 ${((ratio - 1) * 100).toFixed(0)}%，格子应为正方形——请核对框选贴线与行列数` +
+      ($('#calSquare').checked ? `（确定后将按小边 ${lo.toFixed(1)} px 方形化）` : '');
+    warn.style.display = 'block';
+  } else warn.style.display = 'none';
+}
+['#calCols', '#calRows'].forEach(id => $(id).addEventListener('input', updateCalPreview));
+$('#calSquare').addEventListener('change', updateCalPreview);
+
+$('#calOk').addEventListener('click', () => {
+  const s = S.cal.sel;
+  const cols = Math.round(+$('#calCols').value), rows = Math.round(+$('#calRows').value);
+  if (!s || !cols || !rows || cols < 1 || rows < 1) { toast('请输入有效的列数/行数', 'warn'); return; }
+  const sh = AG();
+  S.cal.cols = cols; S.cal.rows = rows;
+  const W = s.x1 - s.x0, H = s.y1 - s.y0;
+  let ox = s.x0, oy = s.y0, cx = W / cols, cy = H / rows, squared = false;
+  if ($('#calSquare').checked) {
+    /* 方形化：取小边为边长。残差小（框略有出入）→ 居中补偿均分；
+       残差大（行列数数错）→ 框边即格线，直接贴角，否则会错开半格 */
+    const sq = Math.min(cx, cy);
+    squared = Math.abs(cx - cy) > 0.01;
+    const rx = W - cols * sq, ry = H - rows * sq;
+    ox = Math.abs(rx) < 0.5 * sq ? s.x0 + rx / 2 : s.x0;
+    oy = Math.abs(ry) < 0.5 * sq ? s.y0 + ry / 2 : s.y0;
+    cx = cy = sq;
+  }
+  sh.grid = { valid: true, ox, oy, cx, cy };
+  sh.pages = null;
+  $('#calPop').classList.remove('show');
+  S.cal.sel = null;
+  setTool('pan');
+  updateFineInputs(); updateStatus(); renderSheetTabs(); requestRender();
+  const { ncols, nrows } = sheetExtent(sh);
+  $('#detectStat').innerHTML =
+    `<span style="color:var(--sage)">✓ ${sh.name} 手工校准完成</span><br>每格 ${cx.toFixed(1)}×${cy.toFixed(1)} px${squared ? '（已按方形统一）' : ''} · 约 ${ncols}×${nrows} 格`;
+  toast(`${sh.name} 校准完成：每格 ${cx.toFixed(1)} px，约 ${ncols}×${nrows} 格` + (squared ? '，已方形化' : ''));
+});
+$('#calCancel').addEventListener('click', () => {
+  $('#calPop').classList.remove('show');
+  S.cal.sel = null; requestRender();
+});
+
+/* 微调面板（当前图幅） */
+function updateFineInputs() {
+  if (!S.sheets.length) return;
+  const g = AG().grid;
+  const on = g.valid;
+  ['inOX', 'inOY', 'inCX', 'inCY'].forEach(id => $('#' + id).disabled = !on);
+  if (!on) {
+    ['inOX', 'inOY', 'inCX', 'inCY'].forEach(id => $('#' + id).value = '');
+    $('#stCells').textContent = '—'; return;
+  }
+  $('#inOX').value = g.ox.toFixed(1); $('#inOY').value = g.oy.toFixed(1);
+  $('#inCX').value = g.cx.toFixed(2); $('#inCY').value = g.cy.toFixed(2);
+  const { ncols, nrows } = sheetExtent(AG());
+  $('#stCells').textContent = `${ncols} 列 × ${nrows} 行`;
+}
+[['inOX', 'ox'], ['inOY', 'oy'], ['inCX', 'cx'], ['inCY', 'cy']].forEach(([id, k]) => {
+  $('#' + id).addEventListener('input', () => {
+    if (!AG().grid.valid) return;
+    const v = parseFloat($('#' + id).value);
+    if (!isFinite(v)) return;
+    AG().grid[k] = k === 'cx' || k === 'cy' ? Math.max(4, v) : v;
+    AG().pages = null;
+    updateStatus(); requestRender();
+  });
+});
+
+/* 一键方形化：两轴取小边统一（配合微调输入手工救急用） */
+$('#btnSquare').addEventListener('click', () => {
+  const g = AG().grid;
+  if (!g.valid) return;
+  const sq = Math.min(g.cx, g.cy);
+  g.cx = g.cy = sq;
+  AG().pages = null;
+  updateFineInputs(); updateStatus(); requestRender();
+  toast(`已设为正方形：每格 ${sq.toFixed(1)}×${sq.toFixed(1)} px`);
+});
+
+/* 叠加设置 */
+$$('.sw').forEach(sw => sw.addEventListener('click', () => {
+  $$('.sw').forEach(x => x.classList.remove('on'));
+  sw.classList.add('on');
+  S.overlay.color = sw.dataset.c;
+  requestRender();
+}));
+$('#inAlpha').addEventListener('input', e => {
+  S.overlay.alpha = e.target.value / 100;
+  $('#alphaVal').textContent = e.target.value + '%';
+  requestRender();
+});
+$('#tglGrid').addEventListener('click', e => {
+  S.overlay.showGrid = !S.overlay.showGrid;
+  e.currentTarget.classList.toggle('on', S.overlay.showGrid);
+  requestRender();
+});
+$('#tglPages').addEventListener('click', e => {
+  S.overlay.showPages = !S.overlay.showPages;
+  e.currentTarget.classList.toggle('on', S.overlay.showPages);
+  requestRender();
+});
+
+/* ============ 图幅管理 ============ */
+function addSheetFromDrag(d) {
+  const x0 = Math.min(d.x0, d.x1), y0 = Math.min(d.y0, d.y1);
+  const x1 = Math.max(d.x0, d.x1), y1 = Math.max(d.y0, d.y1);
+  if (x1 - x0 < 60 || y1 - y0 < 60) { toast('图幅太小，请拖大一点', 'warn'); requestRender(); return; }
+  const sh = makeSheet(`图幅 ${S.sheetSeq - 1}`, x0, y0, x1, y1);
+  sh.paper = { ...(AG() ? AG().paper : S.paper) };   // 沿用当前图幅的纸张设置
+  S.sheets.push(sh);
+  /* 新路线独立：导出范围切到新图幅，不牵连其他图幅 */
+  S.sheets.forEach(s => { S.sheetExport[s.id] = s === sh; });
+  S.activeSheet = S.sheets.length - 1;
+  setTool('pan');
+  renderSheetTabs(); updateFineInputs(); updateStatus(); syncPaperInputs();
+  setStep(1);
+  toast(`已创建 ${sh.name}，请校准它的格子` +
+    (S.sheets.some(s => s !== sh && s.grid.valid) ? '，或点「复制其他图幅的格子」直接沿用' : '（可先自动识别）'));
+  requestRender();
+}
+
+function delActiveSheet() {
+  if (S.activeSheet === 0) return;
+  const sh = AG();
+  S.sheets.splice(S.activeSheet, 1);
+  delete S.sheetExport[sh.id];
+  S.activeSheet = 0;
+  Object.keys(pageSkip).forEach(k => { if (k.startsWith(sh.id + '_')) delete pageSkip[k]; });
+  renderSheetTabs(); updateFineInputs(); updateStatus(); syncPaperInputs();
+  $('#detectStat').innerHTML = '';
+  requestRender();
+  toast('已删除');
+}
+
+function renderSheetTabs() {
+  const mk = box => {
+    box.innerHTML = '';
+    S.sheets.forEach((sh, i) => {
+      const t = document.createElement('div');
+      t.className = 'scope-tab' + (i === S.activeSheet ? ' on' : '') + (sh.grid.valid ? '' : ' noGrid');
+      t.textContent = sh.name;
+      t.title = '点击切换' + (i > 0 ? ' · 双击重命名' : '');
+      t.addEventListener('click', () => switchSheet(i));
+      t.addEventListener('dblclick', () => {
+        if (i === 0) return;
+        const nm = prompt('重命名图幅', sh.name);
+        if (nm && nm.trim()) {
+          sh.name = nm.trim().slice(0, 24);
+          renderSheetTabs(); updateStatus(); updatePagStats();
+          if (S.step === 3) renderPageThumbs();
+          requestRender();
+        }
+      });
+      box.appendChild(t);
+    });
+  };
+  if ($('#sheetTabs1')) mk($('#sheetTabs1'));
+  if ($('#sheetTabs2')) mk($('#sheetTabs2'));
+  if ($('#sheetTabs3')) mk($('#sheetTabs3'));
+  $('#curSheetName').textContent = AG() ? AG().name : '—';
+  $('#btnDelSheet').disabled = S.activeSheet === 0;
+  renderSheetChecks();
+}
+
+function switchSheet(i) {
+  if (i === S.activeSheet || !S.sheets[i]) return;
+  S.activeSheet = i;
+  S.activePage = null;
+  /* 路线切换：导出范围默认跟随当前图幅，避免动 A 幅把 B 幅也印出来 */
+  S.sheets.forEach(s => { S.sheetExport[s.id] = s === S.sheets[i]; });
+  $('#detectStat').innerHTML = '';
+  closeAllPops();
+  renderSheetTabs(); updateFineInputs(); updateStatus(); updatePagStats(); syncPaperInputs();
+  if (i === 0) fitView(); else fitSheet(S.sheets[i]);
+  if (S.step === 3) renderPageThumbs();
+  requestRender();
+}
+
+function renderSheetChecks() {
+  const box = $('#sheetChecks');
+  if (!box) return;
+  box.innerHTML = '';
+  S.sheets.forEach(sh => {
+    if (!sh.grid.valid) return;
+    const lab = document.createElement('label');
+    lab.className = 'sheet-check';
+    const n = sheetPages(sh).length;
+    lab.innerHTML = `<input type="checkbox" ${S.sheetExport[sh.id] === true ? 'checked' : ''}>
+      ${sh.name} <span style="font-family:var(--mono);font-size:11px;color:var(--ink-faint)">${n} 页</span>`;
+    lab.querySelector('input').addEventListener('change', e => {
+      S.sheetExport[sh.id] = e.target.checked;
+      updatePagStats(); renderSheetChecks();
+    });
+    box.appendChild(lab);
+  });
+}
+
+/* 导出范围快捷切换：每条图幅路线独立成档，默认只导当前幅，多幅合并打印用全选 */
+$('#btnExpAll').addEventListener('click', () => {
+  S.sheets.forEach(s => { if (s.grid.valid) S.sheetExport[s.id] = true; });
+  updatePagStats(); renderSheetChecks();
+  toast('导出范围：全部已校准图幅');
+});
+$('#btnExpCur').addEventListener('click', () => {
+  const cur = AG();
+  S.sheets.forEach(s => { S.sheetExport[s.id] = s === cur; });
+  updatePagStats(); renderSheetChecks();
+  toast(`导出范围：仅 ${cur.name}`);
+});
+
+$('#btnNewSheet').addEventListener('click', () => {
+  setTool('split');
+  toast('在画布上拖出一个矩形作为新图幅');
+});
+$('#btnDelSheet').addEventListener('click', delActiveSheet);
+
+/* ============ 拖拽模式 ============ */
+function closeAllPops() {
+  $('#calPop').classList.remove('show');
+}
+$$('#segDragMode button').forEach(b => b.addEventListener('click', () => {
+  $$('#segDragMode button').forEach(x => x.classList.remove('on'));
+  b.classList.add('on');
+  S.dragMode = b.dataset.m;
+  toast(S.dragMode === 'all' ? '整体拖拽：拖任意页移动全部印页' : S.dragMode === 'pan' ? '浏览模式：拖拽平移画布' : '单页拖拽：拖哪页动哪页');
+}));
+
+/* ============ 统计 ============ */
+function anySheetValid() {
+  return S.sheets.some(s => s.grid.valid);
+}
+function updatePagStats() {
+  const sh = AG();
+  const has = sh && sh.grid.valid;
+  if (!has) {
+    ['#stSheetName', '#stPaper', '#stCap', '#stPages'].forEach(id => $(id).textContent = '—');
+    $('#stPage').textContent = '—';
+  } else {
+    const { capC, capR, pw, ph } = pageCapacity(sh);
+    $('#stSheetName').textContent = sh.name;
+    $('#stPaper').textContent = `${(sh.paper || S.paper).size} ${pw}×${ph}mm`;
+    $('#stCap').textContent = `${capC} 列 × ${capR} 行`;
+    const n = sheetPages(sh).length;
+    $('#stPages').textContent = `${n} 页`;
+    $('#stPage').innerHTML = `<b>${sh.name}</b> · ${n} 页`;
+  }
+  let total = 0;
+  S.sheets.forEach(s => {
+    if (s.grid.valid && S.sheetExport[s.id] === true) {
+      sheetPages(s).forEach((p, i) => { if (!pageSkip[`${s.id}_${i}`]) total++; });
+    }
+  });
+  $('#stPagesAll').textContent = `${total} 页`;
+}
+
+/* 纸张参数联动（写入当前图幅，互不影响其他图幅的布局） */
+$('#selPaper').addEventListener('change', e => { AG().paper.size = e.target.value; onPaperChange(); });
+$('#inMargin').addEventListener('input', e => { AG().paper.margin = clamp(+e.target.value || 0, 0, 30); onPaperChange(); });
+$('#inCellMM').addEventListener('input', e => { AG().paper.cellMM = clamp(+e.target.value || 25, 10, 60); onPaperChange(); });
+$('#inFill').addEventListener('input', e => { AG().paper.fill = e.target.value; });
+$$('#segBeyond button').forEach(b => b.addEventListener('click', () => {
+  $$('#segBeyond button').forEach(x => x.classList.remove('on'));
+  b.classList.add('on');
+  AG().paper.beyond = b.dataset.v;
+  requestRender();
+  toast(b.dataset.v === 'blank'
+    ? `${AG().name}：页伸出图幅的部分将留空（画布斜纹区）`
+    : `${AG().name}：页伸出图幅的部分取用图幅外画面`);
+}));
+$$('#segOrient button').forEach(b => b.addEventListener('click', () => {
+  $$('#segOrient button').forEach(x => x.classList.remove('on'));
+  b.classList.add('on');
+  AG().paper.orient = b.dataset.o;
+  onPaperChange();
+}));
+$$('#segOverlap button').forEach(b => b.addEventListener('click', () => {
+  $$('#segOverlap button').forEach(x => x.classList.remove('on'));
+  b.classList.add('on');
+  AG().paper.overlap = +b.dataset.v;
+  if (AG().grid.valid) AG().pages = null;
+  updatePagStats(); renderSheetChecks(); requestRender();
+  toast(`${AG().name} 已按新间隔重新自动铺排`);
+}));
+function onPaperChange() {
+  const sh = AG();
+  if (!sh) return;
+  sh.pages = null;   // 仅当前图幅页尺寸随参数变化，重新铺排
+  $('#cellMMLabel').textContent = sh.paper.cellMM;
+  const [pw, ph] = S.PAPER_MM[sh.paper.size];
+  const usable = Math.min(pw, ph) - 2 * sh.paper.margin;
+  if (usable < sh.paper.cellMM) toast(`纸张可用宽度放不下一格（需 ${sh.paper.cellMM}mm，可用 ${usable.toFixed(0)}mm）`, 'warn');
+  updatePagStats(); renderSheetChecks(); requestRender();
+}
+
+/* UI 纸张输入随活动图幅同步（切换图幅/步骤后调用） */
+function syncPaperInputs() {
+  const sh = AG();
+  if (!sh || !sh.paper) return;
+  const p = sh.paper;
+  $('#selPaper').value = p.size;
+  $('#inMargin').value = p.margin;
+  $('#inCellMM').value = p.cellMM;
+  $('#inFill').value = p.fill;
+  $('#cellMMLabel').textContent = p.cellMM;
+  $$('#segOrient button').forEach(b => b.classList.toggle('on', b.dataset.o === p.orient));
+  $$('#segOverlap button').forEach(b => b.classList.toggle('on', +b.dataset.v === p.overlap));
+  $$('#segBeyond button').forEach(b => b.classList.toggle('on', b.dataset.v === (p.beyond || 'image')));
+}
+$('#btnResetBreaks').addEventListener('click', () => {
+  const sh = AG();
+  if (!sh.grid.valid) return;
+  autoArrange(sh);
+  sh._manualPages = false;
+  S.activePage = null;
+  updatePagStats(); renderSheetChecks(); requestRender();
+  toast(`${sh.name} 已重新自动铺排`);
+});
+
+/* ============ 单页弹窗 ============ */
+const pageSkip = {};   // `${sheet.id}_${idx}` -> true 跳过
+let pmCtx = null;      // {sh, idx}
+function openPageModal(sh, idx) {
+  pmCtx = { sh, idx };
+  const pages = sheetPages(sh);
+  const p = pages[idx];
+  if (!p) return;
+  $('#pmTitle').textContent = `${sh.name} · 第 ${idx + 1} 页（共 ${pages.length} 页）`;
+  const full = renderPageCanvas(sh, p);
+  const pm = $('#pmCanvas');
+  const maxW = 520;
+  const scale = Math.min(1, maxW / full.width);
+  pm.width = Math.round(full.width * scale);
+  pm.height = Math.round(full.height * scale);
+  pm.getContext('2d').drawImage(full, 0, 0, pm.width, pm.height);
+  full.width = 0;
+  $('#pmToggle').textContent = pageSkip[`${sh.id}_${idx}`] ? '恢复打印此页' : '不打印此页';
+  $('#pageModal').classList.add('show');
+}
+$('#pmToggle').addEventListener('click', () => {
+  if (!pmCtx) return;
+  const key = `${pmCtx.sh.id}_${pmCtx.idx}`;
+  pageSkip[key] = !pageSkip[key];
+  $('#pmToggle').textContent = pageSkip[key] ? '恢复打印此页' : '不打印此页';
+  updatePagStats(); requestRender();
+});
+$('#pmDownload').addEventListener('click', async () => {
+  if (!pmCtx) return;
+  const pages = sheetPages(pmCtx.sh);
+  const p = pages[pmCtx.idx];
+  if (!p) return;
+  const cv = renderPageCanvas(pmCtx.sh, p);
+  downloadBlob(await toBlob(cv, 'image/png'), pageName(pmCtx.sh, pmCtx.idx));
+  cv.width = 0;
+});
+$('#pmClose').addEventListener('click', () => {
+  $('#pageModal').classList.remove('show');
+  pmCtx = null;
+});
+$('#pageModal').addEventListener('click', e => {
+  if (e.target === e.currentTarget) $('#pmClose').click();
+});
+function pageName(sh, idx) {
+  return `${S.fileName}_${sh.name}_P${String(idx + 1).padStart(2, '0')}.png`;
+}
+
+/* ============ 导出 ============ */
+/* 渲染一页：页 = 图像上的自由矩形 {x,y,w,h}（px），映射到物理可用区；页外/图外 = 补齐色 */
+function renderPageCanvas(sh, p) {
+  const { pw, ph } = pageCapacity(sh);
+  const dpi = S.dpi;
+  const cv = document.createElement('canvas');
+  cv.width = Math.round(pw / 25.4 * dpi);
+  cv.height = Math.round(ph / 25.4 * dpi);
+  const ctx = cv.getContext('2d');
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0, 0, cv.width, cv.height);
+  const g = sh.grid;
+  const pp = sh.paper || S.paper;
+  const mm2px = mm => mm / 25.4 * dpi;
+  const ux = mm2px(pp.margin), uy = mm2px(pp.margin);
+  const uw = cv.width - 2 * ux, uh = cv.height - 2 * uy;
+  ctx.fillStyle = pp.fill;
+  ctx.fillRect(ux, uy, uw, uh);
+  /* 页矩形与取图边界求交（beyond='blank' 时再 ∩ 图幅），可见部分按格子比例（px/mm）放到正确位置 */
+  const b = sheetSrcBounds(sh);
+  const sx0 = Math.max(p.x, b.x0), sy0 = Math.max(p.y, b.y0);
+  const sx1 = Math.min(p.x + p.w, b.x1), sy1 = Math.min(p.y + p.h, b.y1);
+  if (sx1 > sx0 && sy1 > sy0) {
+    const mmPerPxX = pp.cellMM / g.cx, mmPerPxY = pp.cellMM / g.cy;
+    const dx = ux + (sx0 - p.x) * mmPerPxX / 25.4 * dpi;
+    const dy = uy + (sy0 - p.y) * mmPerPxY / 25.4 * dpi;
+    const dw = (sx1 - sx0) * mmPerPxX / 25.4 * dpi;
+    const dh = (sy1 - sy0) * mmPerPxY / 25.4 * dpi;
+    drawScaled(S.bitmap, sx0, sy0, sx1 - sx0, sy1 - sy0, ctx, dx, dy, dw, dh);
+  }
+  return cv;
+}
+
+/* 页面缩略图列表 */
+function renderPageThumbs() {
+  const tabs = $('#sheetTabs3'), list = $('#pageList');
+  tabs.innerHTML = ''; list.innerHTML = '';
+  if (!S.sheets.length) return;
+  const valid = S.sheets.filter(s => s.grid.valid);
+  valid.forEach(sh => {
+    const t = document.createElement('div');
+    t.className = 'scope-tab' + (sh.id === S.thumbScope ? ' on' : '');
+    t.textContent = `${sh.name} (${sheetPages(sh).length})`;
+    t.addEventListener('click', () => { S.thumbScope = sh.id; renderPageThumbs(); });
+    tabs.appendChild(t);
+  });
+  const sh = valid.find(s => s.id === S.thumbScope) || valid[0];
+  if (!sh) { list.innerHTML = '<p class="hint" style="grid-column:1/-1;text-align:center">无可导出图幅</p>'; return; }
+  S.thumbScope = sh.id;
+  const pages = sheetPages(sh);
+  pages.forEach((p, i) => {
+    const key = `${sh.id}_${i}`;
+    const thumb = document.createElement('div');
+    thumb.className = 'pagethumb' + (pageSkip[key] ? ' off' : '');
+    const cv = renderPageCanvas(sh, p);
+    const tc = document.createElement('canvas');
+    const tw = 150, th = Math.round(150 * cv.height / cv.width);
+    tc.width = tw; tc.height = th;
+    tc.getContext('2d').drawImage(cv, 0, 0, tw, th);
+    cv.width = 0;
+    thumb.appendChild(tc);
+    const tag = document.createElement('div'); tag.className = 'tag'; tag.textContent = `P${i + 1}`;
+    const dl = document.createElement('div'); dl.className = 'dl'; dl.textContent = '↓ PNG';
+    dl.addEventListener('click', async ev => {
+      ev.stopPropagation();
+      const full = renderPageCanvas(sh, p);
+      downloadBlob(await toBlob(full, 'image/png'), pageName(sh, i));
+      full.width = 0;
+    });
+    thumb.append(tag, dl);
+    thumb.title = pageSkip[key] ? '已剔除，点击恢复' : '点击剔除此页';
+    thumb.addEventListener('click', () => {
+      pageSkip[key] = !pageSkip[key];
+      thumb.classList.toggle('off', pageSkip[key]);
+      updatePagStats();
+    });
+    list.appendChild(thumb);
+  });
+}
+
+/* 导出主流程 */
+$('#btnExport').addEventListener('click', doExport);
+
+async function doExport() {
+  const wantPDF = $('#fmtPDF').checked, wantPNG = $('#fmtPNG').checked;
+  if (!wantPDF && !wantPNG) { toast('请至少选择一种导出格式', 'warn'); return; }
+  S.dpi = +$('#selDPI').value;
+  const skipBlank = $('#skipBlank').checked;
+
+  const jobs = [];
+  S.sheets.forEach(sh => {
+    if (!sh.grid.valid || S.sheetExport[sh.id] !== true) return;
+    sheetPages(sh).forEach((p, i) => {
+      if (!pageSkip[`${sh.id}_${i}`]) jobs.push({ sh, p, i });
+    });
+  });
+  if (!jobs.length) { toast('没有需要导出的页面，请在「导出范围」勾选图幅', 'warn'); return; }
+
+  if (S.dpi === 600 && jobs.some(j => (j.sh.paper || S.paper).size === 'A3')) toast('A3@600dpi 单页约 70MB，耐心等待…', 'warn');
+
+  showProgress('正在印制…', jobs.length);
+  try {
+    const pngFiles = [];
+    let done = 0;
+    for (const job of jobs) {
+      setProgress(done, `渲染 ${job.sh.name} 第 ${job.i + 1} 页`);
+      const cv = renderPageCanvas(job.sh, job.p);
+      let blank = false;
+      if (skipBlank) blank = isBlankPage(cv);
+      if (!blank) {
+        if (wantPNG) {
+          const blob = await toBlob(cv, 'image/png');
+          pngFiles.push({
+            name: pageName(job.sh, job.i),
+            data: new Uint8Array(await blob.arrayBuffer()),
+          });
+        }
+        if (wantPDF) job.jpeg = await pageJPEG(cv, job.sh);
+      } else {
+        job.blank = true;
+      }
+      cv.width = 0;
+      done++;
+      setProgress(done, `已完成 ${done}/${jobs.length}`);
+      await new Promise(r => setTimeout(r, 0));
+    }
+
+    if (wantPNG) {
+      setProgress(done, '打包 PNG…');
+      if (pngFiles.length === 1) {
+        downloadBlob(new Blob([pngFiles[0].data], { type: 'image/png' }), pngFiles[0].name);
+      } else if (pngFiles.length) {
+        const zip = buildZip(pngFiles);
+        downloadBlob(new Blob([zip], { type: 'application/zip' }), `${S.fileName}_印页.zip`);
+      }
+    }
+    if (wantPDF) {
+      const live = jobs.filter(j => j.jpeg);
+      if (live.length) {
+        setProgress(done, '生成 PDF…');
+        const pdf = buildPDF(live.map(j => j.jpeg));
+        downloadBlob(new Blob([pdf.bytes], { type: 'application/pdf' }), `${S.fileName}.pdf`);
+        live.forEach(j => j.jpeg = null);
+      }
+    }
+    const skipped = jobs.filter(j => j.blank).length;
+    finishProgress(`完成！共 ${jobs.length - skipped} 页` + (skipped ? `，跳过空白 ${skipped} 页` : ''));
+  } catch (err) {
+    console.error(err);
+    finishProgress('导出失败：' + err.message);
+    toast('导出失败：' + err.message, 'err');
+  }
+}
+
+async function pageJPEG(cv, sh) {
+  const blob = await toBlob(cv, 'image/jpeg', 0.92);
+  const { pw, ph } = pageCapacity(sh);
+  return {
+    bytes: new Uint8Array(await blob.arrayBuffer()),
+    w: cv.width, h: cv.height,
+    wMM: pw, hMM: ph,
+  };
+}
+
+/* 进度弹窗 */
+function showProgress(title, total) {
+  S._pTotal = total;
+  $('#pTitle').textContent = title;
+  $('#pfill').style.width = '0%';
+  $('#ptext').textContent = '准备中';
+  $('#pdone').style.display = 'none';
+  $('#progress').classList.add('show');
+}
+function setProgress(done, text) {
+  $('#pfill').style.width = Math.round(done / Math.max(1, S._pTotal || done) * 100) + '%';
+  $('#ptext').textContent = text;
+}
+function finishProgress(text) {
+  $('#pfill').style.width = '100%';
+  $('#ptext').textContent = text;
+  $('#pdone').style.display = 'block';
+}
+$('#pClose').addEventListener('click', () => $('#progress').classList.remove('show'));
+
+/* ==== pdf-writer ==== */
+/* 最小 PDF 生成器：JPEG 以 DCTDecode 直嵌，每页可独立物理尺寸 */
+function buildPDF(images) {
+  const enc = new TextEncoder();
+  const parts = [];
+  let offset = 0;
+  const push = bytes => { parts.push(bytes); offset += bytes.length; };
+  const pushStr = s => { const b = enc.encode(s); push(b); };
+  const objOffsets = [];
+  const openObj = n => { objOffsets[n] = offset; pushStr(`${n} 0 obj\n`); };
+
+  const head = new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2D, 0x31, 0x2E, 0x34, 0x0A,
+    0x25, 0xE2, 0xE3, 0xCF, 0xD3, 0x0A]);
+  push(head);
+
+  const nPages = images.length;
+  openObj(1); pushStr('<< /Type /Catalog /Pages 2 0 R >>\nendobj\n');
+  const kids = [];
+  for (let i = 0; i < nPages; i++) kids.push(`${3 + i * 3} 0 R`);
+  openObj(2); pushStr(`<< /Type /Pages /Kids [${kids.join(' ')}] /Count ${nPages} >>\nendobj\n`);
+
+  images.forEach((im, i) => {
+    const wPt = im.wMM * MM_PT;
+    const hPt = im.hMM * MM_PT;
+    const pageNum = 3 + i * 3, contNum = pageNum + 1, imgNum = pageNum + 2;
+
+    openObj(pageNum);
+    pushStr(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${wPt.toFixed(3)} ${hPt.toFixed(3)}] /Resources << /XObject << /Im${i} ${imgNum} 0 R >> >> /Contents ${contNum} 0 R >>\nendobj\n`);
+
+    const content = `q ${wPt.toFixed(3)} 0 0 ${hPt.toFixed(3)} 0 0 cm /Im${i} Do Q`;
+    openObj(contNum);
+    pushStr(`<< /Length ${content.length} >>\nstream\n${content}\nendstream\nendobj\n`);
+
+    openObj(imgNum);
+    pushStr(`<< /Type /XObject /Subtype /Image /Width ${im.w} /Height ${im.h} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${im.bytes.length} >>\nstream\n`);
+    push(im.bytes);
+    pushStr('\nendstream\nendobj\n');
+  });
+
+  const total = 3 + nPages * 3;
+  const xrefPos = offset;
+  let xref = `xref\n0 ${total + 1}\n0000000000 65535 f \n`;
+  for (let n = 1; n <= total; n++)
+    xref += String(objOffsets[n]).padStart(10, '0') + ' 00000 n \n';
+  pushStr(xref);
+  pushStr(`trailer\n<< /Size ${total + 1} /Root 1 0 R >>\nstartxref\n${xrefPos}\n%%EOF`);
+
+  const out = new Uint8Array(offset);
+  let pos = 0;
+  for (const p of parts) { out.set(p, pos); pos += p.length; }
+  return { bytes: out };
+}
+
+/* ==== zip-writer ==== */
+/* stored（不压缩）zip：PNG 本身已压缩 */
+function buildZip(files) {
+  const enc = new TextEncoder();
+  const chunks = [];
+  const central = [];
+  let offset = 0;
+  const now = new Date();
+  const dosTime = ((now.getHours() << 11) | (now.getMinutes() << 5) | (now.getSeconds() >> 1)) & 0xFFFF;
+  const dosDate = (((now.getFullYear() - 1980) << 9) | ((now.getMonth() + 1) << 5) | now.getDate()) & 0xFFFF;
+
+  files.forEach(f => {
+    const nameBytes = enc.encode(f.name);
+    const crc = crc32(f.data);
+    const lh = new DataView(new ArrayBuffer(30));
+    lh.setUint32(0, 0x04034b50, true);
+    lh.setUint16(4, 20, true);
+    lh.setUint16(6, 0x0800, true);        // UTF-8 文件名
+    lh.setUint16(8, 0, true);             // stored
+    lh.setUint16(10, dosTime, true);
+    lh.setUint16(12, dosDate, true);
+    lh.setUint32(14, crc, true);
+    lh.setUint32(18, f.data.length, true);
+    lh.setUint32(22, f.data.length, true);
+    lh.setUint16(26, nameBytes.length, true);
+    lh.setUint16(28, 0, true);
+    chunks.push(new Uint8Array(lh.buffer), nameBytes, f.data);
+
+    const cd = new DataView(new ArrayBuffer(46));
+    cd.setUint32(0, 0x02014b50, true);
+    cd.setUint16(4, 20, true);
+    cd.setUint16(6, 20, true);
+    cd.setUint16(8, 0x0800, true);
+    cd.setUint16(10, 0, true);
+    cd.setUint16(12, dosTime, true);
+    cd.setUint16(14, dosDate, true);
+    cd.setUint32(16, crc, true);
+    cd.setUint32(20, f.data.length, true);
+    cd.setUint32(24, f.data.length, true);
+    cd.setUint16(28, nameBytes.length, true);
+    cd.setUint32(42, offset, true);
+    central.push(new Uint8Array(cd.buffer), nameBytes);
+
+    offset += 30 + nameBytes.length + f.data.length;
+  });
+
+  const cdStart = offset;
+  let cdLen = 0;
+  central.forEach(c => cdLen += c.length);
+  const eocd = new DataView(new ArrayBuffer(22));
+  eocd.setUint32(0, 0x06054b50, true);
+  eocd.setUint16(8, files.length, true);
+  eocd.setUint16(10, files.length, true);
+  eocd.setUint32(12, cdLen, true);
+  eocd.setUint32(16, cdStart, true);
+
+  const total = offset + cdLen + 22;
+  const out = new Uint8Array(total);
+  let pos = 0;
+  [...chunks, ...central, new Uint8Array(eocd.buffer)].forEach(c => { out.set(c, pos); pos += c.length; });
+  return out;
+}
+
+/* ============ 步骤与工具切换 ============ */
+function setStep(n) {
+  const unlocked = [true, !!S.bitmap, anySheetValid(), anySheetValid()];
+  if (!unlocked[n]) { toast('请先完成前序步骤', 'warn'); return; }
+  S.step = n;
+  $$('.step').forEach(el => {
+    const s = +el.dataset.step;
+    el.classList.toggle('active', s === n);
+    el.classList.toggle('done', s < n && unlocked[s]);
+    el.classList.toggle('locked', !unlocked[s] && s !== n);
+  });
+  $$('.pstep').forEach((el, i) => el.classList.toggle('show', i === n));
+  view.style.cursor = '';
+  $('#toolCal').style.display = n === 1 ? '' : 'none';
+  $('#toolSplit').style.display = (n === 1 || n === 2) ? '' : 'none';
+  $('#toolAdjust').style.display = (n === 1 || n === 2) ? '' : 'none';
+  if (n !== 1) { $('#calPop').classList.remove('show'); if (S.tool === 'cal') setTool('pan'); }
+  if (n !== 1 && n !== 2 && (S.tool === 'split' || S.tool === 'adjust')) setTool('pan');
+  if (n === 3) renderPageThumbs();
+  syncPaperInputs();
+  requestRender();
+  updateStatus();
+  updatePagStats();
+}
+$$('.step').forEach(el => el.addEventListener('click', () => setStep(+el.dataset.step)));
+
+function setTool(t) {
+  S.tool = t;
+  $$('#toolTools .tbtn').forEach(b => b.classList.toggle('on', b.dataset.tool === t));
+  view.className = t === 'pan' ? '' : 'tool-' + t;
+  view.style.cursor = '';
+}
+$$('#toolTools .tbtn').forEach(b => b.addEventListener('click', () => {
+  if (b.dataset.tool === 'cal' && S.step !== 1) { toast('框选校准请回到「图幅校准」步骤', 'warn'); return; }
+  setTool(b.dataset.tool);
+}));
+
+function updateStatus() {
+  const st = $('#stImg');
+  if (S.bitmap) st.innerHTML = `<b>${S.fileName}</b> · ${S.bitmap.width}×${S.bitmap.height}px`;
+  else st.textContent = '未加载地图';
+  const g = $('#stGrid');
+  if (S.sheets.length && AG().grid.valid) {
+    const sh = AG();
+    g.innerHTML = `<b>${sh.name}</b> ${sh.grid.cx.toFixed(1)}×${sh.grid.cy.toFixed(1)}px · ${(sh.paper || S.paper).cellMM}mm/格`;
+    $('#btnToPag').disabled = false;
+  } else if (S.sheets.length) {
+    g.innerHTML = `${AG().name} 网格未校准`;
+    $('#btnToPag').disabled = !anySheetValid();
+  } else {
+    g.textContent = '网格未校准';
+    $('#btnToPag').disabled = true;
+  }
+}
+
+/* 按钮 */
+$('#btnPick').addEventListener('click', () => $('#fileInput').click());
+$('#dropzone').addEventListener('click', () => $('#fileInput').click());
+$('#fileInput').addEventListener('change', e => { if (e.target.files[0]) loadFile(e.target.files[0]); e.target.value = ''; });
+$('#btnDetect').addEventListener('click', () => detectSheet(AG(), false));
+$('#btnToPag').addEventListener('click', () => setStep(2));
+$('#btnToExport').addEventListener('click', () => setStep(3));
+$('#btnRestart').addEventListener('click', () => {
+  S.bitmap = null; S.preview = null; S._edge = null;
+  S.sheets = []; S.activeSheet = 0;
+  $('#dropzone').classList.remove('hidden');
+  $('#detectStat').innerHTML = '';
+  Object.keys(pageSkip).forEach(k => delete pageSkip[k]);
+  updateFineInputs(); updateStatus(); setStep(0);
+  requestRender();
+});
+
+// ==== 帮助 ====
+function openHelp() { $('#helpModal').classList.add('show'); }
+function closeHelp() {
+  $('#helpModal').classList.remove('show');
+  // 关闭即视为已读：file:// 隐私模式下 localStorage 可能抛异常，静默降级（下次再弹）
+  try { localStorage.setItem('mc_help_seen_v1', '1'); } catch (_) {}
+}
+$('#btnHelp').addEventListener('click', openHelp);
+$('#helpClose').addEventListener('click', closeHelp);
+$('#helpModal').addEventListener('click', e => { if (e.target === e.currentTarget) closeHelp(); });
+
+/* 拖放 */
+const dz = $('#dropzone');
+['dragenter', 'dragover'].forEach(ev => $('#canvasWrap').addEventListener(ev, e => {
+  e.preventDefault(); dz.classList.add('over');
+}));
+['dragleave', 'drop'].forEach(ev => $('#canvasWrap').addEventListener(ev, e => {
+  e.preventDefault(); dz.classList.remove('over');
+}));
+$('#canvasWrap').addEventListener('drop', e => {
+  const f = e.dataTransfer.files[0];
+  if (f) loadFile(f);
+});
+
+/* 缩放按钮 */
+$('#zoomFit').addEventListener('click', fitView);
+$('#zoomIn').addEventListener('click', () => { zoomAt(view._w / 2, view._h / 2, 1.3); });
+$('#zoomOut').addEventListener('click', () => { zoomAt(view._w / 2, view._h / 2, 1 / 1.3); });
+function zoomAt(cx, cy, f) {
+  const k2 = clamp(V.k * f, 0.005, 40);
+  V.x = cx - (cx - V.x) * (k2 / V.k);
+  V.y = cy - (cy - V.y) * (k2 / V.k);
+  V.k = k2;
+  requestRender();
+}
+
+/* 初始化 */
+window.addEventListener('load', () => {
+  resizeView();
+  setStep(0);
+  updateStatus();
+  // 首访自动打开使用指南（localStorage 读失败则静默跳过）
+  try { if (!localStorage.getItem('mc_help_seen_v1')) openHelp(); } catch (_) {}
+});
+/* 图片载入后隐藏 dropzone */
+function patchAfterLoad() {
+  if (S.bitmap) $('#dropzone').classList.add('hidden');
+  else $('#dropzone').classList.remove('hidden');
+}
+const _rq = requestRender;
+requestRender = function () { _rq(); patchAfterLoad(); };
+patchAfterLoad();
+</script>
+</body>
+</html>

@@ -1,0 +1,12 @@
+*
+!.gitignore
+!README.md
+!index.html
+!tavern/
+!tavern/index.html
+!map/
+!map/index.html
+!docs/
+!docs/superpowers/
+!docs/superpowers/specs/
+!docs/superpowers/specs/*.md

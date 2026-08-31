@@ -1,0 +1,3302 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>巨魔颅骨酒馆经营工具</title>
+<style>
+  /* ============ 设计令牌 ============ */
+  :root {
+    --parchment: #F5E6C8;
+    --parchment-dark: #E8D4A8;
+    --parchment-deep: #D9BD80;
+    --ink: #3B2F1A;
+    --ink-soft: #5C4A2E;
+    --ink-faint: #8B7349;
+    --gold: #B8860B;
+    --gold-bright: #D4A437;
+    --crimson: #8B2C2C;
+    --moss: #3D5C3A;
+    --shadow: rgba(59, 47, 26, 0.15);
+
+    --font-display: "Cinzel", "Trajan Pro", "Times New Roman", serif;
+    --font-body: "EB Garamond", "Source Han Serif SC", "Songti SC", "STSong", serif;
+    --font-mono: "JetBrains Mono", "Cascadia Code", Consolas, monospace;
+
+    --radius: 3px;
+    --border: 1px solid var(--ink);
+    --border-double: 3px double var(--ink);
+  }
+
+  /* ============ 重置 ============ */
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    font-family: var(--font-body);
+    background: var(--parchment);
+    color: var(--ink);
+    font-size: 16px;
+    line-height: 1.55;
+    background-image:
+      radial-gradient(ellipse at top left, rgba(184, 134, 11, 0.04), transparent 50%),
+      radial-gradient(ellipse at bottom right, rgba(139, 44, 44, 0.03), transparent 50%);
+  }
+  h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 600; letter-spacing: 0.02em; }
+  button { font-family: inherit; cursor: pointer; }
+  input, select { font-family: inherit; }
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: var(--parchment-dark); }
+  ::-webkit-scrollbar-thumb { background: var(--ink-faint); border-radius: 0; }
+
+  /* ============ 布局 ============ */
+  .app { max-width: 1280px; margin: 0 auto; padding: 24px 32px 80px; }
+
+  /* ============ 顶部状态条 ============ */
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 24px; border: var(--border-double);
+    background: linear-gradient(180deg, var(--parchment-dark), var(--parchment));
+    position: relative;
+  }
+  .topbar::before, .topbar::after {
+    content: "✦"; color: var(--gold); font-size: 14px;
+    position: absolute; top: 50%; transform: translateY(-50%);
+  }
+  .topbar::before { left: 8px; }
+  .topbar::after { right: 8px; }
+  .tavern-title { display: flex; align-items: baseline; gap: 12px; }
+  .tavern-title h1 {
+    font-size: 28px; color: var(--ink);
+    text-shadow: 1px 1px 0 var(--parchment-deep);
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .tavern-title .subtitle {
+    font-family: var(--font-body); font-style: italic;
+    color: var(--ink-soft); font-size: 14px;
+  }
+  /* 酒馆名 input — 视觉上像标题，hover/focus 才显示编辑态 */
+  #tavern-name {
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid transparent;
+    font-family: var(--font-display);
+    font-size: 28px;
+    color: var(--ink);
+    text-shadow: 1px 1px 0 var(--parchment-deep);
+    padding: 2px 6px 2px 4px;
+    min-width: 200px;
+    max-width: 380px;
+    width: auto;
+    transition: border-color 0.15s, background 0.15s;
+    cursor: text;
+  }
+  #tavern-name:hover {
+    border-bottom-color: var(--ink-faint);
+  }
+  #tavern-name:focus {
+    outline: none;
+    border-bottom-color: var(--gold);
+    background: rgba(184, 134, 11, 0.1);
+  }
+  .tavern-name-icon {
+    color: var(--ink-faint);
+    transition: color 0.15s;
+    cursor: pointer;
+  }
+  .tavern-title h1:hover .tavern-name-icon { color: var(--gold); }
+  .topbar-stats { display: flex; gap: 32px; align-items: center; }
+  .stat { text-align: center; }
+  .stat .label {
+    font-family: var(--font-display); font-size: 11px;
+    text-transform: uppercase; letter-spacing: 0.1em; color: var(--ink-faint);
+  }
+  .stat .value {
+    font-family: var(--font-mono); font-size: 22px;
+    color: var(--ink); font-weight: 600;
+  }
+  .stat .value.gold { color: var(--gold); }
+  .stat .value.crimson { color: var(--crimson); }
+  .stat .value.moss { color: var(--moss); }
+  .editable-input {
+    background: transparent; border: none; border-bottom: 1px dotted var(--ink-soft);
+    font-family: inherit; font-size: inherit; color: inherit;
+    text-align: center; width: 100%; padding: 2px 4px;
+  }
+  .editable-input:focus { outline: none; border-bottom-color: var(--gold); background: rgba(184, 134, 11, 0.08); }
+
+  /* ============ Tab 导航 ============ */
+  .tab-nav {
+    display: flex; gap: 0; margin-top: 12px;
+    border-bottom: 2px solid var(--ink);
+  }
+  .tab-btn {
+    background: var(--parchment-dark); border: var(--border);
+    border-bottom: none; padding: 10px 28px;
+    font-family: var(--font-display); font-size: 14px; letter-spacing: 0.08em;
+    color: var(--ink-soft); position: relative; bottom: -2px;
+    transition: background 0.15s;
+  }
+  .tab-btn:hover { background: var(--parchment); color: var(--ink); }
+  .tab-btn.active {
+    background: var(--parchment); color: var(--ink);
+    font-weight: 700; border-bottom: 2px solid var(--parchment);
+  }
+  .tab-btn.active::before {
+    content: "❦"; color: var(--gold); margin-right: 8px;
+  }
+
+  /* ============ 面板 ============ */
+  .panel { display: none; padding: 24px 8px; }
+  .panel.active { display: block; animation: fadeIn 0.3s ease-out; }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .panel-title {
+    font-size: 22px; text-align: center; margin-bottom: 8px;
+    color: var(--ink);
+  }
+  .panel-subtitle {
+    text-align: center; font-style: italic; color: var(--ink-soft);
+    margin-bottom: 24px; font-size: 14px;
+  }
+  .divider {
+    text-align: center; color: var(--gold); margin: 16px 0;
+    letter-spacing: 0.5em; font-size: 12px;
+  }
+  .divider::before { content: "═════ ✦ ═════"; }
+
+  /* ============ 总览 ============ */
+  .overview-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 32px;
+    margin-top: 24px;
+  }
+  .tier-card {
+    border: var(--border-double); padding: 24px; text-align: center;
+    background: linear-gradient(180deg, var(--parchment), var(--parchment-dark));
+  }
+  .tier-emblem { width: 120px; height: 120px; margin: 0 auto 16px; }
+  .tier-name {
+    font-family: var(--font-display); font-size: 32px;
+    color: var(--ink); letter-spacing: 0.1em;
+  }
+  .tier-name-en { font-style: italic; color: var(--ink-soft); font-size: 14px; }
+  .score-bar {
+    height: 12px; background: var(--parchment-deep);
+    border: 1px solid var(--ink); margin: 16px 0 8px; position: relative;
+  }
+  .score-fill {
+    height: 100%; background: linear-gradient(90deg, var(--gold), var(--gold-bright));
+    transition: width 0.4s ease;
+  }
+  .score-label {
+    display: flex; justify-content: space-between;
+    font-family: var(--font-mono); font-size: 12px; color: var(--ink-soft);
+  }
+  .buff-list { list-style: none; }
+  .buff-item {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 8px 12px; border-bottom: 1px dotted var(--ink-faint);
+  }
+  .buff-item:last-child { border-bottom: none; }
+  .buff-positive { color: var(--moss); }
+  .buff-negative { color: var(--crimson); }
+  .buff-amount { font-family: var(--font-mono); font-weight: 600; }
+
+  /* ============ 设施表 ============ */
+  .facility-table {
+    width: 100%; border-collapse: collapse;
+    background: var(--parchment);
+  }
+  .facility-table th, .facility-table td {
+    padding: 10px 12px; text-align: left;
+    border-bottom: 1px solid var(--ink-faint);
+  }
+  .facility-table th {
+    font-family: var(--font-display); font-size: 12px;
+    text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--ink-soft); border-bottom: 2px solid var(--ink);
+    background: var(--parchment-dark);
+  }
+  .facility-table tbody tr:nth-child(even) { background: rgba(217, 189, 128, 0.2); }
+  .facility-row.locked { opacity: 0.45; }
+  .facility-row.locked:hover { background: rgba(139, 44, 44, 0.08); }
+  .facility-name { font-weight: 600; }
+  .facility-name-en { font-style: italic; color: var(--ink-soft); font-size: 13px; }
+  .facility-prereq { color: var(--ink-soft); font-size: 13px; }
+  .facility-prereq.unmet { color: var(--crimson); font-weight: 600; }
+  .tier-cell {
+    cursor: pointer; text-align: center;
+    font-family: var(--font-mono); transition: background 0.15s;
+  }
+  .tier-cell:hover:not(.locked) { background: rgba(184, 134, 11, 0.15); }
+  .tier-cell.owned { background: rgba(61, 92, 58, 0.2); font-weight: 700; }
+  .tier-cell.owned::after { content: " ✓"; color: var(--moss); }
+  .tier-cell.locked { cursor: not-allowed; }
+  .facility-score { font-family: var(--font-mono); font-weight: 600; text-align: center; }
+  .facility-score.active { color: var(--moss); }
+  .facility-activity { font-size: 12px; color: var(--ink-soft); font-style: italic; }
+
+  .facility-footer {
+    margin-top: 16px; padding: 16px 24px;
+    border: var(--border-double); background: var(--parchment-dark);
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .facility-footer .total-label {
+    font-family: var(--font-display); font-size: 14px;
+    letter-spacing: 0.1em; text-transform: uppercase;
+  }
+  .facility-footer .total-value {
+    font-family: var(--font-mono); font-size: 24px; font-weight: 700; color: var(--ink);
+  }
+
+  /* ============ 步骤流程 ============ */
+  .step {
+    border: var(--border); margin-bottom: 16px;
+    background: var(--parchment);
+  }
+  .step-header {
+    padding: 12px 16px; background: var(--parchment-dark);
+    border-bottom: var(--border);
+    display: flex; align-items: center; gap: 12px;
+  }
+  .step-number {
+    width: 32px; height: 32px;
+    border: var(--border); border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-family: var(--font-display); font-weight: 700;
+    background: var(--parchment);
+  }
+  .step-title { font-family: var(--font-display); font-size: 16px; letter-spacing: 0.05em; }
+  .step-body { padding: 16px; }
+
+  /* ============ 投资卡片 ============ */
+  .investment-grid {
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;
+  }
+  .invest-card {
+    border: var(--border); padding: 12px 16px; cursor: pointer;
+    background: var(--parchment); transition: all 0.15s;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .invest-card:hover { background: var(--parchment-dark); }
+  .invest-card.active {
+    background: rgba(61, 92, 58, 0.15);
+    border-color: var(--moss); border-width: 2px;
+  }
+  .invest-card.active::after { content: "✓"; color: var(--moss); font-weight: 700; }
+  .invest-name { font-weight: 600; }
+  .invest-cost { font-family: var(--font-mono); color: var(--gold); font-weight: 600; }
+  .invest-desc { font-size: 12px; color: var(--ink-soft); margin-top: 2px; }
+
+  /* ============ 投掷查询 ============ */
+  .roll-bar {
+    display: flex; gap: 12px; align-items: center; flex-wrap: wrap;
+    padding: 12px; background: var(--parchment-dark);
+    border: 1px solid var(--ink-faint);
+  }
+  .roll-input {
+    width: 80px; padding: 8px 12px; font-family: var(--font-mono); font-size: 18px;
+    text-align: center; border: var(--border); background: var(--parchment);
+  }
+  .roll-input:focus { outline: none; border-color: var(--gold); box-shadow: 0 0 0 2px rgba(184, 134, 11, 0.3); }
+  .btn {
+    padding: 8px 20px; border: var(--border); background: var(--parchment);
+    font-family: var(--font-display); font-size: 13px; letter-spacing: 0.05em;
+    color: var(--ink); transition: all 0.15s;
+  }
+  .btn:hover { background: var(--ink); color: var(--parchment); }
+  .btn.primary { background: var(--ink); color: var(--parchment); }
+  .btn.primary:hover { background: var(--gold); color: var(--ink); }
+  .btn.danger { color: var(--crimson); border-color: var(--crimson); }
+  .btn.danger:hover { background: var(--crimson); color: var(--parchment); }
+  .btn.small { padding: 4px 12px; font-size: 11px; }
+
+  .roll-result {
+    margin-top: 12px; padding: 16px;
+    border: var(--border); background: var(--parchment);
+    animation: fadeIn 0.3s;
+  }
+  .roll-result.empty { display: none; }
+  .result-id {
+    display: inline-block; padding: 2px 10px;
+    background: var(--ink); color: var(--parchment);
+    font-family: var(--font-mono); font-size: 13px; margin-right: 8px;
+  }
+  .result-text { display: inline; line-height: 1.7; }
+  .result-meta {
+    margin-top: 12px; padding-top: 12px; border-top: 1px dotted var(--ink-faint);
+    font-size: 13px; color: var(--ink-soft);
+  }
+  .tag {
+    display: inline-block; padding: 2px 8px; margin: 2px 4px 2px 0;
+    font-size: 11px; font-family: var(--font-mono);
+    border: 1px solid var(--ink-faint);
+  }
+  .tag.bonus { background: rgba(61, 92, 58, 0.15); color: var(--moss); border-color: var(--moss); }
+  .tag.penalty { background: rgba(139, 44, 44, 0.15); color: var(--crimson); border-color: var(--crimson); }
+  .tag.ignore { background: rgba(184, 134, 11, 0.15); color: var(--gold); border-color: var(--gold); }
+  .tag.special { background: var(--parchment-dark); }
+
+  .biz-result {
+    margin-top: 12px; padding: 16px;
+    border: var(--border-double); background: var(--parchment-dark);
+    text-align: center;
+  }
+  .biz-result-type {
+    font-family: var(--font-display); font-size: 24px; letter-spacing: 0.1em;
+  }
+  .biz-result-type.loss { color: var(--crimson); }
+  .biz-result-type.break-even { color: var(--ink-soft); }
+  .biz-result-type.profit { color: var(--moss); }
+  .biz-result-amount {
+    font-family: var(--font-mono); font-size: 28px; font-weight: 700;
+    margin-top: 8px;
+  }
+
+  /* ============ 修整期 ============ */
+  .activity-grid {
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px;
+  }
+  .activity-card {
+    border: var(--border); background: var(--parchment);
+    overflow: hidden;
+    transition: box-shadow 0.2s;
+  }
+  .activity-card:hover { box-shadow: 0 0 0 1px var(--gold); }
+  .activity-card.unavailable { opacity: 0.5; }
+  .activity-card.unavailable:hover { box-shadow: none; }
+  .activity-card.expanded { box-shadow: 0 0 0 1px var(--gold); }
+  .activity-head {
+    padding: 12px 16px; background: var(--parchment-dark);
+    border-bottom: var(--border);
+    display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;
+  }
+  .activity-head-text { flex: 1; }
+  .activity-name { font-family: var(--font-display); font-size: 16px; }
+  .activity-meta { font-size: 12px; color: var(--ink-soft); margin-top: 4px; font-style: italic; }
+  .activity-prereq-badge {
+    display: inline-block; font-size: 11px; padding: 2px 6px;
+    background: var(--parchment); border: 1px solid var(--ink-faint);
+    color: var(--ink-soft); margin-top: 6px;
+    font-family: var(--font-mono); font-style: normal;
+  }
+  .activity-prereq-badge.met { color: var(--moss); border-color: var(--moss); }
+  .activity-prereq-badge.unmet { color: var(--crimson); border-color: var(--crimson); }
+  .activity-expand-btn {
+    background: transparent; border: 1px solid var(--ink-faint);
+    color: var(--ink-soft); padding: 4px 10px;
+    font-family: var(--font-display); font-size: 12px;
+    cursor: pointer; white-space: nowrap;
+    transition: all 0.15s;
+  }
+  .activity-expand-btn:hover { border-color: var(--gold); color: var(--gold); }
+  .activity-body { padding: 12px 16px; }
+  .activity-desc { font-size: 13px; color: var(--ink); margin-bottom: 8px; }
+  .activity-desc-full {
+    font-size: 13px; color: var(--ink); line-height: 1.7;
+    padding: 12px; margin: 8px 0;
+    background: var(--parchment-dark);
+    border-left: 3px solid var(--gold);
+    border-radius: 0;
+  }
+  .activity-controls {
+    display: flex; gap: 8px; align-items: center; margin-top: 8px;
+  }
+  .activity-progress {
+    font-family: var(--font-mono); font-size: 14px;
+    padding: 4px 10px; background: var(--parchment-dark);
+    border: 1px solid var(--ink-faint);
+  }
+  .activity-section-label {
+    grid-column: 1 / -1;
+    font-family: var(--font-display); font-size: 14px;
+    color: var(--ink-soft); margin-top: 8px; margin-bottom: -8px;
+    padding-bottom: 4px; border-bottom: 1px dotted var(--ink-faint);
+  }
+
+  /* ============ 历史 ============ */
+  .history-list { max-height: 400px; overflow-y: auto; }
+  .history-item {
+    padding: 12px; border-bottom: 1px solid var(--ink-faint);
+    display: grid; grid-template-columns: 80px 1fr 120px; gap: 16px;
+    font-size: 13px;
+  }
+  .history-empty { text-align: center; padding: 32px; color: var(--ink-soft); font-style: italic; }
+
+  /* ============ 底部工具栏 ============ */
+  .toolbar {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    padding: 10px 32px; background: var(--ink); color: var(--parchment);
+    display: flex; justify-content: space-between; align-items: center;
+    border-top: 2px solid var(--gold);
+  }
+  .toolbar .save-status { font-size: 12px; font-style: italic; opacity: 0.8; }
+  .toolbar-actions { display: flex; gap: 8px; }
+  .toolbar .btn { background: transparent; color: var(--parchment); border-color: var(--parchment); }
+  .toolbar .btn:hover { background: var(--parchment); color: var(--ink); }
+
+  /* ============ Toast ============ */
+  .toast {
+    position: fixed; top: 24px; right: 24px;
+    padding: 12px 20px; background: var(--ink); color: var(--parchment);
+    border: 1px solid var(--gold); z-index: 1000;
+    animation: slideIn 0.3s ease-out;
+    max-width: 320px;
+  }
+  @keyframes slideIn {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+  .toast.error { border-color: var(--crimson); }
+  .toast.success { border-color: var(--moss); }
+
+  /* ============ 响应式 ============ */
+  @media (max-width: 900px) {
+    .app { padding: 16px; }
+    .topbar { flex-direction: column; gap: 12px; padding: 12px; }
+    .topbar-stats { gap: 16px; }
+    .overview-grid, .activity-grid, .investment-grid { grid-template-columns: 1fr; }
+    .facility-table { font-size: 13px; }
+    .facility-table th, .facility-table td { padding: 6px 8px; }
+    .tab-btn { padding: 8px 16px; font-size: 12px; }
+    .history-item { grid-template-columns: 1fr; gap: 4px; }
+  }
+
+  /* 隐藏文件输入 */
+  .hidden-input { display: none; }
+
+  /* ============ 规则速查 ============ */
+  .rules-section {
+    margin: 16px 0; border: var(--border); background: var(--parchment);
+  }
+  .rules-section > summary {
+    padding: 12px 16px; background: var(--parchment-dark);
+    font-family: var(--font-display); font-size: 16px;
+    cursor: pointer; user-select: none;
+    border-left: 3px solid var(--gold);
+    transition: background 0.15s;
+    list-style: none; position: relative; padding-left: 36px;
+  }
+  .rules-section > summary::-webkit-details-marker { display: none; }
+  .rules-section > summary::before {
+    content: "▼"; position: absolute; left: 14px;
+    color: var(--gold); font-size: 12px; transition: transform 0.15s;
+  }
+  .rules-section:not([open]) > summary::before { transform: rotate(-90deg); }
+  .rules-section > summary:hover { background: var(--parchment-deep); }
+  .rules-section-hint {
+    font-family: var(--font-body); font-size: 12px; font-style: italic;
+    color: var(--ink-soft); margin-left: 8px; font-weight: normal;
+  }
+  .rules-section > div, .rules-section > table { padding: 16px; }
+
+  /* 等级表 */
+  .tier-lookup-table {
+    width: 100%; border-collapse: collapse;
+    font-size: 14px;
+  }
+  .tier-lookup-table th, .tier-lookup-table td {
+    padding: 10px 12px; text-align: left;
+    border-bottom: 1px solid var(--ink-faint);
+  }
+  .tier-lookup-table th {
+    font-family: var(--font-display); font-size: 12px;
+    text-transform: uppercase; letter-spacing: 0.1em;
+    color: var(--ink-soft); background: var(--parchment-dark);
+  }
+  .tier-lookup-table .tier-cell {
+    display: inline-block; width: 22px; height: 22px;
+    border-radius: 50%; vertical-align: middle;
+    border: 2px solid var(--ink); margin-right: 8px;
+  }
+
+  /* 生意结果矩阵 */
+  .biz-matrix {
+    border-collapse: collapse; font-family: var(--font-mono);
+    font-size: 13px; min-width: 100%;
+  }
+  .biz-matrix th, .biz-matrix td {
+    padding: 8px 10px; text-align: center;
+    border: 1px solid var(--ink-faint);
+  }
+  .biz-matrix th {
+    background: var(--parchment-dark);
+    font-family: var(--font-display); font-size: 12px;
+    color: var(--ink-soft);
+  }
+  .biz-matrix .range-cell {
+    font-family: var(--font-display); font-weight: 600;
+    background: var(--parchment-dark);
+    color: var(--ink);
+  }
+  .biz-matrix .cell-profit { color: var(--moss); background: rgba(61, 92, 58, 0.08); }
+  .biz-matrix .cell-loss { color: var(--crimson); background: rgba(139, 44, 44, 0.08); }
+  .biz-matrix .cell-even { color: var(--ink-soft); background: var(--parchment-dark); }
+
+  /* 事件表 */
+  .rules-event-toolbar {
+    display: flex; gap: 12px; align-items: center;
+    padding: 0 0 12px;
+  }
+  .rules-event-list {
+    max-height: 600px; overflow-y: auto;
+    border: 1px solid var(--ink-faint); background: var(--parchment-dark);
+    padding: 4px;
+  }
+  .rules-event-item {
+    display: flex; gap: 10px; align-items: flex-start;
+    padding: 8px 12px; border-bottom: 1px dotted var(--ink-faint);
+    font-size: 13px; line-height: 1.6;
+  }
+  .rules-event-item:last-child { border-bottom: none; }
+  .rules-event-item:hover { background: var(--parchment); }
+  .rules-event-id {
+    font-family: var(--font-mono); font-weight: 600;
+    color: var(--ink-soft); min-width: 36px;
+  }
+  .rules-event-text { flex: 1; color: var(--ink); }
+  .rules-event-tag {
+    display: inline-block; font-size: 10px;
+    padding: 1px 6px; margin-left: 4px;
+    border: 1px solid; vertical-align: middle;
+    font-family: var(--font-mono);
+  }
+  .tag-bonus { color: var(--moss); border-color: var(--moss); background: rgba(61, 92, 58, 0.08); }
+  .tag-penalty { color: var(--crimson); border-color: var(--crimson); background: rgba(139, 44, 44, 0.08); }
+  .tag-cost { color: var(--ink); border-color: var(--ink-soft); background: var(--parchment); }
+  .tag-gain { color: var(--gold); border-color: var(--gold); background: rgba(184, 134, 11, 0.08); }
+  .tag-flag { color: var(--gold); border-color: var(--ink); background: var(--parchment-deep); }
+  .tag-special { color: var(--ink-soft); border-color: var(--ink-faint); background: var(--parchment); }
+
+  /* 修整期 d100 表嵌套 details */
+  .rules-downtime-table {
+    margin: 8px 0 16px; border: 1px solid var(--ink-faint); background: var(--parchment);
+  }
+  .rules-downtime-table > summary {
+    padding: 8px 14px; cursor: pointer;
+    font-family: var(--font-display); font-size: 14px;
+    background: var(--parchment-dark); user-select: none;
+    list-style: none; position: relative; padding-left: 30px;
+  }
+  .rules-downtime-table > summary::-webkit-details-marker { display: none; }
+  .rules-downtime-table > summary::before {
+    content: "▶"; position: absolute; left: 12px;
+    color: var(--gold); font-size: 10px;
+  }
+  .rules-downtime-table[open] > summary::before { content: "▼"; }
+  .rules-downtime-rows { padding: 8px 12px; }
+  .rules-downtime-row {
+    padding: 8px 0; font-size: 13px; line-height: 1.6;
+    border-bottom: 1px dotted var(--ink-faint);
+  }
+  .rules-downtime-row:last-child { border-bottom: none; }
+  .rules-downtime-range {
+    font-family: var(--font-mono); font-weight: 600;
+    color: var(--gold); margin-right: 12px; min-width: 60px;
+    display: inline-block;
+  }
+
+  /* ============ Modal 系统（替代 confirm/prompt/alert，兼容 iframe/Notion） ============ */
+  .modal-overlay {
+    position: fixed; inset: 0; z-index: 1000;
+    background: rgba(59, 47, 26, 0.55);
+    display: flex; align-items: center; justify-content: center;
+    padding: 16px;
+    opacity: 0; transition: opacity 0.18s;
+  }
+  .modal-overlay.visible { opacity: 1; }
+  .modal-dialog {
+    background: var(--parchment);
+    border: var(--border-double);
+    max-width: 460px; width: 100%;
+    padding: 22px 26px 18px;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+    font-family: var(--font-body);
+    position: relative;
+    transform: translateY(-12px);
+    transition: transform 0.18s;
+  }
+  .modal-overlay.visible .modal-dialog { transform: translateY(0); }
+  .modal-title {
+    font-family: var(--font-display);
+    font-size: 18px; color: var(--ink);
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--ink-faint);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .modal-title-icon { color: var(--gold); font-size: 16px; }
+  .modal-title.danger { color: var(--crimson); }
+  .modal-message {
+    font-size: 14px; line-height: 1.7;
+    color: var(--ink);
+    margin-bottom: 16px;
+    white-space: pre-wrap;
+  }
+  .modal-input {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid var(--ink-faint);
+    background: var(--parchment-dark);
+    font-family: var(--font-mono);
+    font-size: 14px;
+    color: var(--ink);
+    margin-bottom: 12px;
+    box-sizing: border-box;
+  }
+  .modal-input:focus {
+    outline: none;
+    border-color: var(--gold);
+    background: var(--parchment);
+  }
+  .modal-textarea {
+    width: 100%;
+    min-height: 180px;
+    padding: 10px;
+    border: 1px solid var(--ink-faint);
+    background: var(--parchment-dark);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--ink);
+    margin-bottom: 8px;
+    box-sizing: border-box;
+    resize: vertical;
+  }
+  .modal-textarea:focus {
+    outline: none;
+    border-color: var(--gold);
+  }
+  .modal-actions {
+    display: flex; gap: 8px; justify-content: flex-end;
+    flex-wrap: wrap;
+  }
+  .modal-hint {
+    font-size: 12px; font-style: italic;
+    color: var(--ink-soft);
+    margin-bottom: 8px;
+  }
+  .modal-actions .btn.danger {
+    background: var(--crimson); color: var(--parchment);
+  }
+  .modal-actions .btn.primary {
+    background: var(--gold); color: var(--ink);
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ============ 顶部状态条 ============ -->
+  <header class="topbar">
+    <div class="tavern-title">
+      <h1>
+        <span>☩</span>
+        <input type="text" id="tavern-name" value="巨魔颅骨酒馆" maxlength="30">
+        <svg class="tavern-name-icon" width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+          <path d="M11.5 1.5l3 3L5 14l-3.5.5L2 11l9.5-9.5zM10 3L3 10v3h3l7-7-3-3z"/>
+        </svg>
+      </h1>
+      <span class="subtitle">— Trollskull Manor —</span>
+    </div>
+    <div class="topbar-stats">
+      <div class="stat">
+        <div class="label">第 N 日</div>
+        <input type="number" id="current-day" class="editable-input" value="1" min="1" style="width: 60px;">
+      </div>
+      <div class="stat">
+        <div class="label">钱袋</div>
+        <input type="number" id="current-gold" class="editable-input" value="0" style="width: 100px;">
+      </div>
+      <div class="stat">
+        <div class="label">评级</div>
+        <div class="value" id="tier-mini">流浪</div>
+      </div>
+      <div class="stat">
+        <div class="label">评估分</div>
+        <div class="value" id="score-mini">0</div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ============ Tab 导航 ============ -->
+  <nav class="tab-nav">
+    <button class="tab-btn active" data-tab="overview">总览</button>
+    <button class="tab-btn" data-tab="facilities">设施</button>
+    <button class="tab-btn" data-tab="ops">十日经营</button>
+    <button class="tab-btn" data-tab="downtime">修整期</button>
+    <button class="tab-btn" data-tab="rules">规则</button>
+  </nav>
+
+  <!-- ============ 总览面板 ============ -->
+  <section id="tab-overview" class="panel active">
+    <h2 class="panel-title">酒馆概览</h2>
+    <div class="divider"></div>
+    <div class="overview-grid">
+      <div class="tier-card">
+        <div id="tier-emblem-container"></div>
+        <div class="tier-name" id="overview-tier">流浪</div>
+        <div class="tier-name-en" id="overview-tier-en">Squalid</div>
+        <div class="score-bar">
+          <div class="score-fill" id="score-fill" style="width: 0%;"></div>
+        </div>
+        <div class="score-label">
+          <span id="score-current">0 分</span>
+          <span id="score-next">→ 5 升级</span>
+        </div>
+      </div>
+      <div>
+        <h3 style="margin-bottom: 12px;">当前生效的影响</h3>
+        <ul class="buff-list" id="buff-list">
+          <li class="history-empty">暂无生效中的项目</li>
+        </ul>
+        <h3 style="margin: 24px 0 12px;">本次周期临时加值</h3>
+        <div id="temp-bonus-summary" style="padding: 12px; border: 1px dotted var(--ink-faint); background: var(--parchment-dark); font-family: var(--font-mono);">
+          下次生意结果投掷：+0
+        </div>
+        <h3 style="margin: 24px 0 12px;">最近一次经营</h3>
+        <div id="last-cycle-summary" style="padding: 12px; border: 1px dotted var(--ink-faint); background: var(--parchment-dark); font-size: 13px;">
+          尚未进行任何经营周期
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top: 32px;">
+      <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px;">
+        <h3 style="margin: 0;">近期结算</h3>
+        <button class="btn small" id="goto-history-btn">查看全部 →</button>
+      </div>
+      <div id="recent-cycle-list"></div>
+    </div>
+  </section>
+
+  <!-- ============ 设施面板 ============ -->
+  <section id="tab-facilities" class="panel">
+    <h2 class="panel-title">酒馆设施与装修升级</h2>
+    <p class="panel-subtitle">点击价格档位即可购买或升级 · 未满足前置条件的设施无法购买</p>
+    <div class="divider"></div>
+    <div style="overflow-x: auto;">
+      <table class="facility-table" id="facility-table">
+        <thead>
+          <tr>
+            <th>设施</th>
+            <th>前置条件</th>
+            <th>廉价档</th>
+            <th>中等档</th>
+            <th>华贵档</th>
+            <th>当前评分</th>
+            <th>解锁活动</th>
+          </tr>
+        </thead>
+        <tbody id="facility-tbody"></tbody>
+      </table>
+    </div>
+    <div class="facility-footer">
+      <div>
+        <span class="total-label">总评估分</span>
+        <span class="total-value" id="total-score">0</span>
+        <span style="margin-left: 24px;" class="total-label">质量等级</span>
+        <span class="total-value" id="total-tier">流浪</span>
+      </div>
+      <div>
+        <button class="btn small" id="load-trollskull">载入巨魔颅骨预设</button>
+        <button class="btn small danger" id="clear-facilities">清空所有</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 十日经营面板 ============ -->
+  <section id="tab-ops" class="panel">
+    <h2 class="panel-title">十日经营周期</h2>
+    <p class="panel-subtitle">按步骤完成一次经营结算 · 结算后日数自动 +10</p>
+    <div class="divider"></div>
+
+    <!-- 步骤 1: 投资 -->
+    <div class="step">
+      <div class="step-header">
+        <span class="step-number">1</span>
+        <span class="step-title">可选投资</span>
+      </div>
+      <div class="step-body">
+        <div class="investment-grid" id="investment-grid"></div>
+        <div style="margin-top: 12px; padding: 8px 12px; background: var(--parchment-dark); font-size: 13px; color: var(--ink-soft); border: 1px dotted var(--ink-faint);">
+          提示：勾选额外服务后下次生意结果 +10；其他投资用于抵消部分事件损失。
+        </div>
+      </div>
+    </div>
+
+    <!-- 步骤 2: 本旬活动 -->
+    <div class="step">
+      <div class="step-header">
+        <span class="step-number">2</span>
+        <span class="step-title">本旬活动（可选）</span>
+      </div>
+      <div class="step-body">
+        <div id="activity-picker" style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center;">
+          <select id="cycle-activity-select" style="min-width: 200px; padding: 4px 8px;">
+            <option value="">— 无活动 —</option>
+          </select>
+          <label>投入天数：<input type="number" id="cycle-activity-days" min="1" max="10" value="1" style="width: 60px; padding: 4px 8px;"></label>
+        </div>
+        <div id="cycle-activity-hint" style="margin-top: 10px; padding: 8px 12px; background: var(--parchment-dark); font-size: 13px; color: var(--ink-soft); border: 1px dotted var(--ink-faint);">
+          选择一项修整期活动投入本旬。仅影响生意结果的加值/费用会在结算时自动应用。
+        </div>
+      </div>
+    </div>
+
+    <!-- 步骤 3: 酒馆事件 -->
+    <div class="step">
+      <div class="step-header">
+        <span class="step-number">3</span>
+        <span class="step-title">酒馆事件</span>
+      </div>
+      <div class="step-body">
+        <div class="roll-bar">
+          <span>事件骰值 (d100)：</span>
+          <input type="number" id="event-roll" class="roll-input" min="1" max="100" placeholder="00">
+          <button class="btn" id="event-query">查询</button>
+          <button class="btn small" id="event-random">🎲 投骰</button>
+          <span style="margin-left: auto; font-size: 13px; color: var(--ink-soft);">
+            注：00 视为 100
+          </span>
+        </div>
+        <div class="roll-result empty" id="event-result">
+          <!-- 动态填充 -->
+        </div>
+      </div>
+    </div>
+
+    <!-- 步骤 4: 生意结果 -->
+    <div class="step">
+      <div class="step-header">
+        <span class="step-number">4</span>
+        <span class="step-title">生意结果投掷</span>
+      </div>
+      <div class="step-body">
+        <div style="margin-bottom: 12px; padding: 8px 12px; background: var(--parchment-dark); font-size: 13px; border: 1px dotted var(--ink-faint);">
+          当前质量等级：<strong id="ops-current-tier">流浪</strong> ·
+          临时加值：<strong id="ops-temp-bonus">+0</strong>
+        </div>
+        <div class="roll-bar">
+          <span>生意骰值 (d100)：</span>
+          <input type="number" id="business-roll" class="roll-input" min="1" placeholder="00">
+          <button class="btn" id="business-query">查询</button>
+          <button class="btn small" id="business-random">🎲 投骰</button>
+        </div>
+        <div class="biz-result empty" id="business-result" style="display: none;">
+          <!-- 动态填充 -->
+        </div>
+      </div>
+    </div>
+
+    <!-- 步骤 5: 结算 -->
+    <div class="step">
+      <div class="step-header">
+        <span class="step-number">5</span>
+        <span class="step-title">结算本轮</span>
+      </div>
+      <div class="step-body">
+        <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+          <button class="btn primary" id="settle-cycle">✓ 确认结算本轮</button>
+          <span style="font-size: 13px; color: var(--ink-soft);">
+            结算将：应用钱袋变动 / 写入历史 / 清除临时加值 / 日数 +10
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <h3 style="margin-top: 32px; margin-bottom: 12px;">经营历史</h3>
+    <div class="history-list" id="history-list">
+      <div class="history-empty">尚未进行任何经营周期</div>
+    </div>
+  </section>
+
+  <!-- ============ 修整期面板 ============ -->
+  <section id="tab-downtime" class="panel">
+    <h2 class="panel-title">修整期活动</h2>
+    <p class="panel-subtitle">设施解锁的修整期活动 · 累积天数自动计算下次生意结果加值</p>
+    <div class="divider"></div>
+    <div class="activity-grid" id="activity-grid"></div>
+
+    <h3 style="margin-top: 32px; margin-bottom: 12px;">酿酒 / 蒸馏酒队列 (40 天后投骰)</h3>
+    <div style="padding: 12px; border: var(--border); background: var(--parchment-dark); font-size: 13px; margin-bottom: 12px;">
+      <strong>使用方法：</strong>开始一批新酿 → 每天点 +1 推进进度 → 满 40 天后输入 d100 查表 → 结算后从队列移除
+    </div>
+    <div id="brew-queue"></div>
+  </section>
+
+  <!-- ============ 规则速查面板 ============ -->
+  <section id="tab-rules" class="panel">
+    <h2 class="panel-title">规则速查</h2>
+    <p class="panel-subtitle">所有 PDF 投掷表与等级一览 · 点击各分区标题可折叠/展开</p>
+    <div class="divider"></div>
+
+    <details class="rules-section" open>
+      <summary>一、质量等级表 <span class="rules-section-hint">（按总评估分对应）</span></summary>
+      <div id="rules-tiers"></div>
+    </details>
+
+    <details class="rules-section" open>
+      <summary>二、可选投资</summary>
+      <div id="rules-investments"></div>
+    </details>
+
+    <details class="rules-section" open>
+      <summary>三、设施与装修升级 <span class="rules-section-hint">（17 项 · 含前置与三档价格）</span></summary>
+      <div style="overflow-x: auto;">
+        <table class="facility-table" id="rules-facility-table">
+          <thead>
+            <tr><th>设施</th><th>前置</th><th>廉价</th><th>中等</th><th>华贵</th><th>评分</th><th>解锁活动</th></tr>
+          </thead>
+          <tbody id="rules-facility-tbody"></tbody>
+        </table>
+      </div>
+    </details>
+
+    <details class="rules-section" open>
+      <summary>四、生意结果表 <span class="rules-section-hint">（9 档骰值 × 6 个等级 · 红=亏损 绿=盈利 灰=收支平衡）</span></summary>
+      <div style="overflow-x: auto;">
+        <div id="rules-biz-matrix"></div>
+      </div>
+    </details>
+
+    <details class="rules-section" open>
+      <summary>五、酒馆事件表 <span class="rules-section-hint">（100 条 · 可搜索）</span></summary>
+      <div class="rules-event-toolbar">
+        <input type="text" id="rules-event-search" class="roll-input" placeholder="搜索事件文本（如：火灾、扫兴鬼、经理）..." style="flex: 1; text-align: left;">
+        <span id="rules-event-count" style="font-size: 13px; color: var(--ink-soft); font-family: var(--font-mono);"></span>
+      </div>
+      <div class="rules-event-list" id="rules-event-list"></div>
+    </details>
+
+    <details class="rules-section">
+      <summary>六、修整期 d100 表 <span class="rules-section-hint">（7 张 · 默认折叠 · 点击展开）</span></summary>
+      <div id="rules-downtime-tables"></div>
+    </details>
+  </section>
+
+</div>
+
+<!-- ============ 底部工具栏 ============ -->
+<footer class="toolbar">
+  <div class="save-status" id="save-status">尚未保存</div>
+  <div class="toolbar-actions">
+    <button class="btn small" id="btn-save">立即保存</button>
+    <button class="btn small" id="btn-export">导出 JSON</button>
+    <button class="btn small" id="btn-import">导入文件</button>
+    <button class="btn small" id="btn-paste-import">粘贴导入</button>
+    <button class="btn small danger" id="btn-reset">重置</button>
+  </div>
+</footer>
+
+<input type="file" id="file-input" class="hidden-input" accept=".json">
+<div id="modal-root"></div>
+
+<script>
+"use strict";
+
+// ============================================================================
+// 数据层
+// ============================================================================
+
+// 评级（按分数递增）
+const TIERS = [
+  { id: 'squalid',      name: '流浪', en: 'Squalid',      min: 1,  max: 4,  color: '#6B4423' },
+  { id: 'poor',         name: '穷困', en: 'Poor',         min: 5,  max: 12, color: '#8B5A2B' },
+  { id: 'modest',       name: '俭朴', en: 'Modest',       min: 13, max: 19, color: '#A87C4A' },
+  { id: 'comfortable',  name: '舒适', en: 'Comfortable',  min: 20, max: 49, color: '#3D5C3A' },
+  { id: 'wealthy',      name: '富裕', en: 'Wealthy',      min: 50, max: 69, color: '#B8860B' },
+  { id: 'aristocratic', name: '奢华', en: 'Aristocratic', min: 70, max: Infinity, color: '#8B2C2C' },
+];
+
+// 设施（17 项）
+// price: [廉价, 中等, 华贵]，bonus: [低, 中, 高]
+const FACILITIES = [
+  { key: 'taproom',       name: '酒吧',       en: 'Taproom',        prereq: [],                  price: [200, 500, 1000], bonus: [1, 3, 5], activity: '一起工作' },
+  { key: 'kitchen',       name: '厨房',       en: 'Kitchen',        prereq: ['taproom'],         price: [200, 500, 1000], bonus: [1, 3, 5], activity: '美餐' },
+  { key: 'larder',        name: '食品库',     en: 'Larder',         prereq: ['kitchen'],         price: [200, 500, 1000], bonus: [1, 3, 5], activity: '稀有食材' },
+  { key: 'cellar',        name: '地窖',       en: 'Cellar',         prereq: ['taproom'],         price: [400, 650, 800],  bonus: [1, 3, 5], activity: '走私' },
+  { key: 'beer_engine',   name: '啤酒引擎',   en: 'Beer Engine',    prereq: ['cellar'],          price: [400, 650, 800],  bonus: [2, 4, 6], activity: '啤酒节' },
+  { key: 'beer_garden',   name: '啤酒花园',   en: 'Beer Garden',    prereq: ['taproom'],         price: [200, 500, 1000], bonus: [2, 4, 6], activity: '烧烤季' },
+  { key: 'brewery',       name: '酿酒机',     en: 'Brewery',        prereq: ['cellar'],          price: [400, 650, 800],  bonus: [1, 3, 5], activity: '酿酒' },
+  { key: 'distillery',    name: '蒸馏机',     en: 'Distillery',     prereq: ['cellar'],          price: [400, 650, 800],  bonus: [1, 3, 5], activity: '蒸馏酒' },
+  { key: 'feasting_hall', name: '宴会厅',     en: 'Feasting Hall',  prereq: ['larder'],          price: [500, 750, 1200], bonus: [2, 4, 6], activity: '宴会' },
+  { key: 'guest_bedrooms',name: '客房',       en: 'Guest Bedrooms', prereq: ['kitchen'],         price: [400, 650, 800],  bonus: [1, 3, 5], activity: '招募雇工' },
+  { key: 'lavatories',    name: '卫生间',     en: 'Lavatories',     prereq: ['taproom'],         price: [200, 500, 1000], bonus: [2, 3, 4], activity: '—' },
+  { key: 'office',        name: '办公室',     en: 'Office',         prereq: ['taproom'],         price: [200, 500, 1000], bonus: [1, 3, 5], activity: '市场推广' },
+  { key: 'snug',          name: '包间',       en: 'Snug',           prereq: ['taproom'],         price: [400, 650, 800],  bonus: [1, 3, 5], activity: '收集隐秘情报' },
+  { key: 'saloon_bar',    name: '沙龙区',     en: 'Saloon Bar',     prereq: ['snug'],            price: [500, 750, 1200], bonus: [2, 4, 6], activity: '找联络人' },
+  { key: 'stage',         name: '舞台',       en: 'Stage',          prereq: ['saloon_bar'],      price: [200, 500, 1000], bonus: [1, 3, 5], activity: '娱乐' },
+  { key: 'dancefloor',    name: '舞池',       en: 'Dancefloor',     prereq: ['stage'],           price: [400, 650, 800],  bonus: [1, 3, 5], activity: '舞会' },
+  { key: 'stables',       name: '马厩',       en: 'Stables',        prereq: ['guest_bedrooms'],  price: [400, 650, 800],  bonus: [1, 3, 5], activity: '收集信息' },
+  { key: 'coach_house',   name: '马车房',     en: 'Coach House',    prereq: ['stables'],         price: [400, 650, 800],  bonus: [1, 3, 5], activity: '广结人脉' },
+];
+
+// 可选投资
+const INVESTMENTS = [
+  { key: 'maintenance', name: '预防性维护', cost: 10, desc: '可能减少其他费用（白蚁、爆桶、漏水等）' },
+  { key: 'insurance',   name: '保险',       cost: 10, desc: '覆盖火灾、风暴、洪水、地震和沉降' },
+  { key: 'security',    name: '额外安保',   cost: 20, desc: '降低你和顾客的风险（斗殴、盗窃等）' },
+  { key: 'service',     name: '额外服务',   cost: 10, desc: '下次生意结果检定 +10' },
+];
+
+// 生意结果表 d100（6 列对应 6 评级）
+// tier order: squalid, poor, modest, comfortable, wealthy, aristocratic
+const BUSINESS_TABLE = [
+  { range: [1, 20],   type: 'loss',      exprs: ['3d10*3', '3d10*4', '3d10*5', '3d10*6', '3d10*8', '3d10*10'] },
+  { range: [21, 30],  type: 'loss',      exprs: ['2d8*3',  '2d8*4',  '2d8*5',  '2d8*6',  '2d8*8',  '2d8*10']  },
+  { range: [31, 40],  type: 'loss',      exprs: ['1d6*3',  '1d6*4',  '1d6*5',  '1d6*6',  '1d6*8',  '1d6*10']  },
+  { range: [41, 60],  type: 'break_even',exprs: [null, null, null, null, null, null] },
+  { range: [61, 80],  type: 'profit',    exprs: ['1d6',    '1d6*3',  '1d6*5',  '1d6*7',  '1d6*9',  '1d6*12']  },
+  { range: [81, 90],  type: 'profit',    exprs: ['2d8',    '2d8*3',  '2d8*5',  '2d8*7',  '2d8*9',  '2d8*12']  },
+  { range: [91, 110], type: 'profit',    exprs: ['3d10',   '3d10*3', '3d10*5', '3d10*7', '3d10*9', '3d10*12'] },
+  { range: [111, 130],type: 'profit',    exprs: ['5d10',   '5d10*3', '5d10*5', '5d10*7', '5d10*9', '5d10*12'] },
+  { range: [131, 999],type: 'profit',    exprs: ['7d10',   '7d10*3', '7d10*5', '7d10*7', '7d10*9', '7d10*12'] },
+];
+
+// 酒馆事件表 d100（精选规则文本 + 效果标签）
+// type: bonus(下次临时加值) / penalty(下次临时减值) / cost(费用) / gain(收益) / flag(永久效果) / special(自定义)
+const EVENTS = [
+  { id: 1,  text: '水手慈善基金会在你的酒馆举办年度饮酒比赛。下次生意结果 +20（提供额外服务则 +30）。', tags: [{kind:'bonus', val:'+20 / +30'}] },
+  { id: 2,  text: '一群禁酒传教士在你的酒馆外组成纠察队。下次生意结果 -5。', tags: [{kind:'penalty', val:'-5'}] },
+  { id: 3,  text: '议会对所有本地企业征收一项特别费用，以改善街道。支付 1d6×10 金币。', tags: [{kind:'cost', val:'1d6×10'}] },
+  { id: 4,  text: '在你的建筑物中发现白蚁。除非支付预防性维护费用，否则需支付 1d10×10 金币用于修理。', tags: [{kind:'cost', val:'1d10×10', ignore:'maintenance'}] },
+  { id: 5,  text: '一名地方官员选择你的酒馆作为调查当地名人死亡案件的地点，吸引了大量人群。下次生意结果 +15。', tags: [{kind:'bonus', val:'+15'}] },
+  { id: 6,  text: '一位骑马的法师装作不小心地向你的酒馆发射魔法飞弹。受到惊吓的顾客避免靠近。下次生意结果 -10。', tags: [{kind:'penalty', val:'-10'}] },
+  { id: 7,  text: '一场本该友好的"干杯！干饭！"活动演变成了酒馆斗殴。支付 1d4×5 金币用于修理。如支付额外安保，忽略此结果。', tags: [{kind:'cost', val:'1d4×5', ignore:'security'}] },
+  { id: 8,  text: '附近新开了一家酒馆，吸引了一些你的常客。竞争对手停止营业前，所有未来生意结果 -10（手动添加永久负面）。', tags: [{kind:'flag', val:'竞争对手 -10'}] },
+  { id: 9,  text: '当地辩论社在你的酒馆举行会议，吸引了公众兴趣。下次生意结果 +10（提供额外服务则 +15）。', tags: [{kind:'bonus', val:'+10 / +15'}] },
+  { id: 10, text: '当地的罪犯开始把你的酒馆当作聚集地。他们拒绝付酒钱并吓跑其他顾客。处理前所有未来生意结果 -10。如支付额外安保，忽略此结果。', tags: [{kind:'flag', val:'罪犯 -10', ignore:'security'}] },
+  { id: 11, text: '有人出价购买你的酒馆，价格为 2d4×400 金币。', tags: [{kind:'special', val:'可选交易'}] },
+  { id: 12, text: '一天晚上打烊后，酒馆发生了火灾。如无保险，需支付 1d10×20 金币用于修理。', tags: [{kind:'cost', val:'1d10×20', ignore:'insurance'}] },
+  { id: 13, text: '在你的酒馆举行了一场为穷人筹款的公开会议。下次生意结果 +10（提供额外服务则 +15）。', tags: [{kind:'bonus', val:'+10 / +15'}] },
+  { id: 14, text: '一位经验丰富的酒馆经理提出为你工作。接受则支付一次性 50 金币签约费，所有未来生意结果 +10（永久）。', tags: [{kind:'flag', val:'经理 +10 (50gp)'}] },
+  { id: 15, text: '一群刚从盈利丰厚的长途航行中归来的船长水手在你的酒馆狂欢了整整一个星期。下次生意结果 +15。', tags: [{kind:'bonus', val:'+15'}] },
+  { id: 16, text: '你的一个啤酒桶爆裂了。除非支付预防性维护，否则需支付 1d4×10 金币修理。', tags: [{kind:'cost', val:'1d4×10', ignore:'maintenance'}] },
+  { id: 17, text: '一位大大咧咧的德鲁伊指出了你的酒馆防水问题，并施放暴雨法术暴露了严重的屋顶漏水。除非支付预防性维护，否则需支付 2d6×5 金币修理。', tags: [{kind:'cost', val:'2d6×5', ignore:'maintenance'}] },
+  { id: 18, text: '在你的酒馆举办了年度半兽人选美比赛。下次生意结果 -10。', tags: [{kind:'penalty', val:'-10'}] },
+  { id: 19, text: '一个小妖精出现在你的酒馆，提出帮助酿造啤酒，以换取食宿。接受则从下次生意结果开始每次 +10，直到你开始亏损，届时小妖精会愤怒地离开。', tags: [{kind:'flag', val:'小妖精 +10 (至首次亏损)'}] },
+  { id: 20, text: '当地的歌剧社团选择你的酒馆作为他们下一场大型演出的场地。接受则他们会支付你 50 金币租金，并且下次生意结果 +10。', tags: [{kind:'special', val:'50gp + 下次 +10'}] },
+  { id: 21, text: '食品检查员在你的酒馆发现了使用劣质食材的证据。需支付 50 金币罚款。如提供额外服务，忽略此结果。', tags: [{kind:'cost', val:'50', ignore:'service'}] },
+  { id: 22, text: '两名法师在街上决斗，你的酒馆被一道打偏的闪电击中。需支付 8d8 金币进行修理。', tags: [{kind:'cost', val:'8d8'}] },
+  { id: 23, text: '两艘敌对商船的船员来到你的酒馆并发生了斗殴。需支付 3d6×5 金币进行修理。如支付额外安保，忽略此结果。', tags: [{kind:'cost', val:'3d6×5', ignore:'security'}] },
+  { id: 24, text: '一队骑士在你的酒馆庆祝最近的胜利，停留了几天。下次生意结果 +20。', tags: [{kind:'bonus', val:'+20'}] },
+  { id: 25, text: '两组敌对的半身种冒险者在你的酒馆发起了一场以食物为武器的大战。需支付 2d4×5 金币修理。如支付额外安保或额外服务，忽略此结果。', tags: [{kind:'cost', val:'2d4×5', ignore:'security/service'}] },
+  { id: 26, text: '不合时宜的恶劣天气使得顾客在家闭门不出。下次生意结果 -10。', tags: [{kind:'penalty', val:'-10'}] },
+  { id: 27, text: '一支巡回演出的剧团请求你允许他们在你的酒馆表演以换取小费。下次生意结果 +20。', tags: [{kind:'bonus', val:'+20'}] },
+  { id: 28, text: '当地报纸刊登了对你的酒馆的不利评论。下次生意结果 -15。', tags: [{kind:'penalty', val:'-15'}] },
+  { id: 29, text: '你聘请了一位技艺高超的新厨师。所有未来生意结果 +10（永久）。', tags: [{kind:'flag', val:'名厨 +10'}] },
+  { id: 30, text: '一场突如其来的冰雹损坏了你的屋顶。如无保险，需支付 2d4×5 金币修理。', tags: [{kind:'cost', val:'2d4×5', ignore:'insurance'}] },
+  { id: 31, text: '一次轻微的地震造成了酒馆内部设施损坏。如无保险，需支付 2d6×5 金币修理。', tags: [{kind:'cost', val:'2d6×5', ignore:'insurance'}] },
+  { id: 32, text: '一位当地贵族开始频繁光顾你的酒馆，并带着一大群随从。下次生意结果 +20。', tags: [{kind:'bonus', val:'+20'}] },
+  { id: 33, text: '当地历史学会在你的酒馆举行了每半年一度的晚宴。下次生意结果 +5（支付额外服务则 +10）。', tags: [{kind:'bonus', val:'+5 / +10'}] },
+  { id: 34, text: '你的新酒保脾气暴躁，惹恼了几位常客。下次生意结果 -5。', tags: [{kind:'penalty', val:'-5'}] },
+  { id: 35, text: '当地一家砖厂倒闭，新失业的工人将有更多时间和金钱花在你的酒馆。下次生意结果 +10。', tags: [{kind:'bonus', val:'+10'}] },
+  { id: 36, text: '一场脱口秀之夜演变成了酒馆斗殴。需支付 2d4×5 金币修理。如支付额外安保，忽略此结果。', tags: [{kind:'cost', val:'2d4×5', ignore:'security'}] },
+  { id: 37, text: '魔法修行学会在你的酒馆举行了一次特别会议。下次生意结果 +10（提供额外服务则 +20）。', tags: [{kind:'bonus', val:'+10 / +20'}] },
+  { id: 38, text: '一场突发的洪水对你的酒馆单间造成了严重损害。如无保险，需支付 2d6×5 金币修理。', tags: [{kind:'cost', val:'2d6×5', ignore:'insurance'}] },
+  { id: 39, text: '你找到了一个新的、经行会批准的供应商，进货有不小折扣。所有未来生意结果 +10（永久）。', tags: [{kind:'flag', val:'供应商 +10'}] },
+  { id: 40, text: '当地拜龙教的成员开始在你的酒馆聚众赌博。下次生意结果 -10。', tags: [{kind:'penalty', val:'-10'}] },
+  { id: 41, text: '当地的罪犯在打烊后闯入你的酒馆，殴打员工并盗走了部分利润。损失 3d6 金币。如支付额外安保，忽略此结果。', tags: [{kind:'cost', val:'3d6', ignore:'security'}] },
+  { id: 42, text: '一个扫兴鬼开始在你的酒馆出没。被驱逐前所有未来生意结果 -10（手动添加永久负面）。', tags: [{kind:'flag', val:'扫兴鬼 -10'}] },
+  { id: 43, text: '亡灵法师秘会在你的酒馆举行了一场盛大的晚宴。下次生意结果 +5（提供额外服务则 +10）。', tags: [{kind:'bonus', val:'+5 / +10'}] },
+  { id: 44, text: '老鼠集群在你的酒馆地下室定居，并在整个酒馆内自由奔跑。消灭前所有未来生意结果 -15（手动添加永久负面）。', tags: [{kind:'flag', val:'鼠群 -15'}] },
+  { id: 45, text: '一头固执的食人魔开始频繁光顾你的酒馆。她不付酒钱，还吓跑其他顾客。解决前所有未来生意结果 -5（手动添加永久负面）。', tags: [{kind:'flag', val:'食人魔 -5'}] },
+  { id: 46, text: '你的酿酒师改进了你的麦芽酒配方。所有未来生意结果 +5（永久）。', tags: [{kind:'flag', val:'酿酒师 +5'}] },
+  { id: 47, text: '你的酒保、厨师和服务生卷入了一起丑陋的三角恋，最终引发斗殴。需支付 2d4×5 金币修理。如有额外安保，忽略此结果。', tags: [{kind:'cost', val:'2d4×5', ignore:'security'}] },
+  { id: 48, text: '你的半数员工因一种神秘疾病倒下了。下次生意结果 -15，除非提供额外服务。', tags: [{kind:'penalty', val:'-15', ignore:'service'}] },
+  { id: 49, text: '一位心怀怨恨的前雇员在某个夜晚打烊后纵火烧毁了你的酒馆。如无保险，需支付 2d8×10 金币修理。', tags: [{kind:'cost', val:'2d8×10', ignore:'insurance'}] },
+  { id: 50, text: '一只狂野的格乌什之眼开始光顾你的酒馆，它的气味迫使其他顾客离开。解决前所有未来生意结果 -5（手动添加永久负面）。', tags: [{kind:'flag', val:'格乌什之眼 -5'}] },
+  { id: 51, text: '一个扒手选择了你的酒馆作为他们的首选狩猎场，许多顾客不再光顾。下次生意结果 -10。', tags: [{kind:'penalty', val:'-10'}] },
+  { id: 52, text: '年度盛事"华丽胡子大赛"在您的酒馆内举行，赢得了极大的赞誉。下次生意结果 +20（购买额外服务则 +30）。', tags: [{kind:'bonus', val:'+20 / +30'}] },
+  { id: 53, text: '一场蟑螂瘟疫侵袭了您的厨房。除非支付预防性维护，否则下次生意结果 -10。', tags: [{kind:'penalty', val:'-10', ignore:'maintenance'}] },
+  { id: 54, text: '两名圣骑士在您的酒馆外发生了激烈的争执，并展开了一场决斗，吸引了一大群围观者。下次生意结果 +10。', tags: [{kind:'bonus', val:'+10'}] },
+  { id: 55, text: '一位自称先知的年轻女子在您的酒馆内开始布道，并吸引了一群人。下次生意结果 +10。', tags: [{kind:'bonus', val:'+10'}] },
+  { id: 56, text: '两位竞争当地市政职位的候选人同晚出现在您的酒馆，导致了一场斗殴。需支付 1d6×5 金币修理。如有额外安保，可忽略。', tags: [{kind:'cost', val:'1d6×5', ignore:'security'}] },
+  { id: 57, text: '一位精灵商人在热浪季节期间开始在您的酒馆外售卖冰淇淋。下次生意结果 +10。', tags: [{kind:'bonus', val:'+10'}] },
+  { id: 58, text: '您的烤箱裂开了，需要更换。除非支付预防性维护，否则需支付 20+1d12 金币。', tags: [{kind:'cost', val:'20+1d12', ignore:'maintenance'}] },
+  { id: 59, text: '一群牧师声称您的酒馆被邪恶存在侵扰，迫使所有人离开，以便他们进行驱魔仪式。下次生意结果 -5。', tags: [{kind:'penalty', val:'-5'}] },
+  { id: 60, text: '一个私刑团伙出现在您的酒馆，指控一名顾客（一位法师）犯下了不可言喻的罪行。法师与团伙之间爆发了斗殴。需支付 2d6×5 金币修理。如有额外安保，可忽略。', tags: [{kind:'cost', val:'2d6×5', ignore:'security'}] },
+  { id: 61, text: '在一个满月的夜晚，有人在您的厕所里变成了一只鼠人。三人丧生，生意一度严重受挫。下次生意结果 -15。', tags: [{kind:'penalty', val:'-15'}] },
+  { id: 62, text: '一位侏儒魔术师开始频繁光顾您的酒馆，并以她的巧妙戏法令观众欢欣鼓舞。下次生意结果 +10。', tags: [{kind:'bonus', val:'+10'}] },
+  { id: 63, text: '您的一个啤酒桶爆炸了。除非支付预防性维护，否则需支付 40+3d12 金币修理。', tags: [{kind:'cost', val:'40+3d12', ignore:'maintenance'}] },
+  { id: 64, text: '一根漏水的管道导致地下室被未经处理的污水淹没。除非支付预防性维护，否则需支付 10+1d12 金币修理。', tags: [{kind:'cost', val:'10+1d12', ignore:'maintenance'}] },
+  { id: 65, text: '一天晚上，一位顾客对羊羔炖菜产生了过敏反应并死亡。生意因此受到影响。下次生意结果 -15。', tags: [{kind:'penalty', val:'-15'}] },
+  { id: 66, text: '酒保打断了三名邪教徒在后屋进行的献祭仪式。人们纷纷涌向酒馆，希望再次看到这样的表演。下次生意结果 +10。', tags: [{kind:'bonus', val:'+10'}] },
+  { id: 67, text: '一群黑猫莫名其妙地进入您的酒馆，绕着房间转了七圈，然后离开。迷信的人暂时避开了这里。下次生意结果 -10。', tags: [{kind:'penalty', val:'-10'}] },
+  { id: 68, text: '您发现屋顶有大面积的漏水。除非支付预防性维护，否则需支付 20+2d12 金币修理。', tags: [{kind:'cost', val:'20+2d12', ignore:'maintenance'}] },
+  { id: 69, text: '当地公会的一群暴徒在午夜闯入您的酒馆，将其彻底破坏，造成 20+5d10 金币的维修费用。几天后，公会会长承认这是一个错误，但并没有道歉或赔偿的意思。', tags: [{kind:'cost', val:'20+5d10'}] },
+  { id: 70, text: '一位著名的小说家开始在您的酒馆里撰写她的最新史诗作品。她的追随者都是豪饮之辈。下次生意结果 +20。', tags: [{kind:'bonus', val:'+20'}] },
+  { id: 71, text: '城里开始流传一份告示，号召人们因您的不爱国行为而抵制您的酒馆。下次生意结果 -10。', tags: [{kind:'penalty', val:'-10'}] },
+  { id: 72, text: '一只大型会说话的蟾蜍在您酒馆旁边的小巷里安了家，声称自己是一位被诅咒的美丽公主。人们纷纷前来观看。下次生意结果 +20。', tags: [{kind:'bonus', val:'+20'}] },
+  { id: 73, text: '您的酒馆被选为即将举行的市政选举的投票站。人们在投票后留下来喝酒。下次生意结果 +10（购买额外服务则 +15）。', tags: [{kind:'bonus', val:'+10 / +15'}] },
+  { id: 74, text: '一伙征兵队进入您的酒馆并绑架了几位顾客。之后几天生意变得冷清。下次生意结果 -15。如有额外安保，可忽略。', tags: [{kind:'penalty', val:'-15', ignore:'security'}] },
+  { id: 75, text: '街上的烟花表演出了差错，导致您的酒馆失火。除非有保险，否则需支付 50+4d12 金币修理。', tags: [{kind:'cost', val:'50+4d12', ignore:'insurance'}] },
+  { id: 76, text: '一位当地的角斗士经常光顾您的酒馆。一天晚上，当有人坐在她最喜欢的椅子上时，发生了一场斗殴。除非有额外安保，否则需支付 3d4×5 金币修理。', tags: [{kind:'cost', val:'3d4×5', ignore:'security'}] },
+  { id: 77, text: '一位竞争对手酒馆老板雇佣了一位半身人密探，经常光顾您的酒馆并制造麻烦。下次生意结果 -5。', tags: [{kind:'penalty', val:'-5'}] },
+  { id: 78, text: '一只幼年的食腐兽不知怎么地进入了您的其中一个厕所。需支付 10+1d12 金币将其移除。', tags: [{kind:'cost', val:'10+1d12'}] },
+  { id: 79, text: '一支冒险队伍来到您的酒馆，请大家喝酒，并向他们讲述他们的英勇事迹。下次生意结果 +20。', tags: [{kind:'bonus', val:'+20'}] },
+  { id: 80, text: '一位商人悄悄接近您，向您推销廉价走私酒。接受则未来所有生意结果 +15（永久）。但可能引起当地公会不满（DM 判断）。', tags: [{kind:'flag', val:'走私酒 +15'}] },
+  { id: 81, text: '一群迷失方向的矮人矿工意外挖掘了一条通向您酒馆地下室的隧道。需支付 40+3d12 金币修理。', tags: [{kind:'cost', val:'40+3d12'}] },
+  { id: 82, text: '您的酒保不小心冒犯了一位当地的女巫，后者对您的啤酒施了诅咒。下次生意结果 -5。', tags: [{kind:'penalty', val:'-5'}] },
+  { id: 83, text: '小妖精开始莫名其妙地在您的酒馆出现，四处飞舞，捉弄顾客，制造混乱。下次生意结果 -10。', tags: [{kind:'penalty', val:'-10'}] },
+  { id: 84, text: '一批新酿造的葡萄酒在当地人中非常受欢迎。下次生意结果 +20。', tags: [{kind:'bonus', val:'+20'}] },
+  { id: 85, text: '一位强大的巫师提出以 5d6×100 金币的价格购买您的酒馆。她坚持要您卖掉，并传言称您的地下室里埋藏着某种珍贵的东西。', tags: [{kind:'special', val:'可选交易 5d6×100'}] },
+  { id: 86, text: '一群刚到城市的野蛮人喜欢上了您的酒馆。他们在公共房间里搭起了帐篷，带了他们的动物进来，喝光了所有的啤酒，拒绝付款。下次生意结果 -10。如有额外安保，可忽略。', tags: [{kind:'penalty', val:'-10', ignore:'security'}] },
+  { id: 87, text: '一个卖馅饼的小贩在您的酒馆外面摆起了摊位，吸引了顾客。下次生意结果 +10。', tags: [{kind:'bonus', val:'+10'}] },
+  { id: 88, text: '浓雾影响出行，这使得顾客减少来到你的酒馆消遣。下次生意结果 -5。', tags: [{kind:'penalty', val:'-5'}] },
+  { id: 89, text: '一位来自遥远国度的巫师喝得酩酊大醉，不小心在您的酒吧间释放了狂野的魔法。需支付 10+2d12 金币修理。', tags: [{kind:'cost', val:'10+2d12'}] },
+  { id: 90, text: '两位年轻的贵族在街上赛马车，其中一位撞进了您的酒馆。除非有保险，否则需支付 60+4d12 金币修理。', tags: [{kind:'cost', val:'60+4d12', ignore:'insurance'}] },
+  { id: 91, text: '一位受欢迎的当地牧师的追悼会在您的公共房间举行。下次生意结果 +10（购买额外服务则 +15）。', tags: [{kind:'bonus', val:'+10 / +15'}] },
+  { id: 92, text: '一个葬歌将您的酒馆作为基地，学习该地区所有失传的歌曲。直到这个不死怪物离开之前，所有生意结果 -30（手动添加永久负面）。', tags: [{kind:'flag', val:'葬歌 -30'}] },
+  { id: 93, text: '一位外国外交官在您的酒馆饮酒时死亡，可能是被人下毒。当局关闭了您的酒馆几天以进行调查。下次生意结果 -20。', tags: [{kind:'penalty', val:'-20'}] },
+  { id: 94, text: '一头会说话的驴子进入您的酒馆，并要求将啤酒倒在碗里。他是一位被诅咒的外国领主。人们纷纷来到酒馆听他的故事，生意因此兴隆。下次生意结果 +20（购买额外服务则 +30）。', tags: [{kind:'bonus', val:'+20 / +30'}] },
+  { id: 95, text: '两所敌对的僧侣学校在某个晚上同时出现在您的酒馆，随后爆发了一场斗殴。需支付 3d6×5 金币修理。如有额外安保，可忽略。', tags: [{kind:'cost', val:'3d6×5', ignore:'security'}] },
+  { id: 96, text: '一对吟游诗人进行了一场音乐对决，令人群愉悦并吸引了更多的顾客。下次生意结果 +10。', tags: [{kind:'bonus', val:'+10'}] },
+  { id: 97, text: '一位侏儒工匠带着一个令人惊叹的发条机器人造访了您的酒馆。然而，这台机器开始行为异常，最终失控，损坏了公共房间。需支付 20+1d12 金币修理。如购买额外安保，可忽略。', tags: [{kind:'cost', val:'20+1d12', ignore:'security'}] },
+  { id: 98, text: '某晚，您的酒保免费给一位口渴但贫困的圣骑士一杯酒。作为感谢，圣骑士祝福了啤酒桶，下一桶啤酒变得前所未有的美味。下次生意结果 +20。', tags: [{kind:'bonus', val:'+20'}] },
+  { id: 99, text: '奇怪的符文开始出现在公共房间的家具和墙壁上。顾客们感到害怕并选择远离。下次生意结果 -5。', tags: [{kind:'penalty', val:'-5'}] },
+  { id: 100, text: '一群哑剧演员进入了您的酒馆，并在几个晚上为顾客们带来了娱乐。下次生意结果 -10。', tags: [{kind:'penalty', val:'-10'}] },
+];
+
+// 修整期活动（含 d100 表的）
+// desc: 一行摘要（卡片折叠态显示）
+// descFull: PDF 原文（卡片展开态显示）— source: reference/pdf_text.txt p.12-19
+const ACTIVITIES = [
+  { key: 'barbecue',     name: '烧烤季',    en: 'Barbecue Season',    prereq: 'beer_garden',   freq: '无限制',
+    desc: '春夏时分外出烧烤。每天 +2 下次生意结果。若未付保险，损失翻倍。',
+    descFull: '春夏时分是外出烧烤的好时机——比如烤肉串，或者炭烤香肠。花费在这个活动上的每天都会为你的下次生意经营表 +2。由于用火的安全危险，除非你付了保险，否则你的损失会翻倍。',
+    hasTable: false },
+  { key: 'banquet',      name: '宴会',      en: 'Banquet',            prereq: 'feasting_hall', freq: '十天一次',
+    desc: '为高层举办宴会。每场需 1 天 + 10gp。结束后投 d100 查表。',
+    descFull: '为社会的高层举办宴会需要精致的餐品与酒水。你举办的每个宴会都需要花费 1 天时间和 10gp 准备。在参加完这个活动后，在"宴会表"骰 d100 来决定活动成败与否。',
+    hasTable: true, table: 'banquet' },
+  { key: 'beer_festival',name: '啤酒节',    en: 'Beer Festival',      prereq: 'beer_engine',   freq: '十天一次',
+    desc: '让当地酿酒者展示自家酒。骰 6d6 加入下次生意结果。若未预防性维护和额外安保，受等额修复账单。',
+    descFull: '在啤酒节上，让当地的酿酒者们展示他们自家的酒。骰 6d6（代表每个顾客的啤酒）并把结果添加到你的下一次生意结果表上。然而，酗酒也会造成伤害。如果你没有采取预防性维护和额外的安全措施，你就会收到一笔等同于你所骰数额的修复账单。（如，骰出 3 个 4，就要额外花费 12gp）',
+    hasTable: false },
+  { key: 'brew',         name: '酿酒',      en: 'Brew Beer',          prereq: 'brewery',       freq: '同时最多 5 批',
+    desc: '每天消耗 1gp 原料。40 天后在酿酒表投 d100。',
+    descFull: '如果你酿酒技术不错，那么自酿麦酒是个挣钱的好办法。你每天进行该活动，会消耗 1gp 的原料（比如苦酒原汁，水果，香料，咖啡豆等等）。记下酿酒的时间以及你使用的特殊原料，正好 40 天后，在"酿酒表"里投骰。',
+    hasTable: true, table: 'brew' },
+  { key: 'dance',        name: '舞会',      en: 'Dance Night',        prereq: 'dancefloor',    freq: '十天一次',
+    desc: '每场需 1 天准备，结束后在舞会表投 d100。',
+    descFull: '把你的酒馆变成舞厅可以提高收入，但要花费一番功夫。每场你举行的舞会需要一天时间准备，在参加完这个活动后，在"舞会表"骰 d100 来决定活动成败与否。',
+    hasTable: true, table: 'dance' },
+  { key: 'distill',      name: '蒸馏酒',    en: 'Distil Spirits',     prereq: 'distillery',    freq: '同时最多 5 批',
+    desc: '每天消耗 1gp 原料。40 天后在蒸馏酒表投 d100。',
+    descFull: '蒸馏制作你自己的杜松子酒或朗姆酒能提升你酒馆的名气，让你相比其他酒馆额外挣得一份体面的收入。你每天进行该活动，会消耗 1gp 的原料（比如香草，香料，水果，果皮等等）。记下蒸馏的时间以及你使用的特殊原料，正好 40 天后，在"蒸馏酒表"里投骰。',
+    hasTable: true, table: 'distill' },
+  { key: 'entertainment',name: '娱乐',      en: 'Entertainment',      prereq: 'stage',         freq: '无限制',
+    desc: '每天 2gp 花费。骰 1 骰，奇数下次生意 +1，偶数 +3。',
+    descFull: '好的娱乐活动总是能够吸引人群，但吸引效果有弱有强。你进行该活动每天要花费 2gp。每天进行该活动时骰一个骰子，如果是奇数，在你的下个生意结果表 +1；如果是偶数，在你的下个生意结果表 +3。',
+    hasTable: false },
+  { key: 'feast',        name: '美餐',      en: 'Feast',              prereq: 'kitchen',       freq: '无限制',
+    desc: '每天 1gp 原料，下次生意结果 +2。',
+    descFull: '好酒馆会定期出一个独家菜单，把每顿饭变为美餐。你进行该活动每天要花费 1gp 购买原料，并在你的下次生意结果表获得 +2 加值。',
+    hasTable: false },
+  { key: 'info_gather',  name: '收集信息',  en: 'Information Gather', prereq: 'stables',       freq: '十天一次',
+    desc: '每天 5% 概率获通神术效果（限于可收集信息）。',
+    descFull: '让旅客能够从遥远的土地、路途处带来流言。你进行该活动的每天，都有 5% 的概率获得类同通神术 commune 的效果，不过带有一个限制，你问题的答案必须是能够通过信息收集得到的。',
+    hasTable: false },
+  { key: 'join_staff',   name: '一起工作',  en: 'Join Staff',         prereq: 'taproom',       freq: '无限制',
+    desc: '每天累积 10% 几率获免费"额外安保"。',
+    descFull: '参与日常工作意味着你能够参与解决问题，一些问题对你的员工而言需要绞尽脑汁才能搞定，对你来说可能轻而易举。你与员工共事的每天都会为你增加累计的 10% 几率，可以让你获得免费的"额外安保"。',
+    hasTable: false },
+  { key: 'make_contacts',name: '找联络人',  en: 'Make Contacts',      prereq: 'saloon_bar',    freq: '十天一次',
+    desc: '每天 3gp 喝酒攀谈。投 d100 查表，每多 1 天 +2。',
+    descFull: '沙龙区会吸引重要的顾客，你可以借此获得有用的信息。你在酒馆花钱喝酒，和人攀谈，每天会花费你 3gp。喝酒之后在"找到联络人表"投骰来决定成败与否。你攀谈的每天会为你在这个表上额外 +2 奖励。',
+    hasTable: true, table: 'contacts' },
+  { key: 'marketing',    name: '市场推广',  en: 'Marketing',          prereq: 'office',        freq: '无限制',
+    desc: '每天 1d3gp，下次生意结果 +2。',
+    descFull: '市场推广活动可以采取多种形式，比如印刷并分发传单，或在当地报纸上刊登广告，甚至雇佣城镇里的报信人来为你的酒馆做宣传。每天投入此类活动会花费你 1d3 金币，并为下一次的生意结果投骰给予 +2 的加成。',
+    hasTable: false },
+  { key: 'rare_ingr',    name: '稀有食材',  en: 'Rare Ingredients',   prereq: 'larder',        freq: '最多 10 批',
+    desc: '每天 1gp。一批稀有食材可在宴会/酿酒/蒸馏酒表 +10%，或宴会时下次生意 +4。',
+    descFull: '提供超凡的美食与饮品能促使顾客消费更多，且更频繁地光顾。只需每天花费 1 金币即可寻找稀有食材来充实酒馆贮藏室。参与这项活动后，你将获得一批稀有食材。你可以消耗一批稀有食材，以在"宴请"、"酿酒"或"蒸馏酒"表格上的任意一个骰投中，增加 10% 的奖励，或是为使用"宴会"修整期活动时的下一次生意结果骰投，提供 +4 的加成。',
+    hasTable: false },
+  { key: 'recruit',      name: '招募雇工',  en: 'Recruit Hirelings',  prereq: 'guest_bedrooms',freq: '无限制',
+    desc: '每天可招募一名雇工，PHB 第五章费用。',
+    descFull: '随着宾客的来来往往，你将有机会结识各式各样的专业人才：佣兵、工匠、医生、铁匠，以及更多领域的专家。《玩家手册》第五章"装备"部分详细列出了招募雇工的费用。每天投入此类活动，你就能根据财力招募任意一位雇工，为你的酒馆服务。通过此活动招募的雇工总是值得信赖且可靠的。',
+    hasTable: false },
+  { key: 'smuggling',    name: '走私',      en: 'Smuggling',          prereq: 'cellar',        freq: '无限制',
+    desc: '每天 +4 下次生意结果。结算后在走私表投 d100，每多 1 天 -5。',
+    descFull: '地窖的用途远不止于储藏酒水。若你决定将酒馆的暗门开启，涉足犯罪交易，虽然风险极大，但利润同样丰厚。每天投入此类活动，将为下一次的生意结果骰投带来 +4 的奖励。在确定生意结果后，你需要在"走私表"上进行骰投，每多一天进行走私活动，投骰时将承受 -5 的惩罚。',
+    hasTable: true, table: 'smuggling' },
+  { key: 'social',       name: '广结人脉',  en: 'Social Connections', prereq: 'coach_house',   freq: '十天一次',
+    desc: '每天累积 5% 几率获贵族晚宴邀请。',
+    descFull: '一座精心打理的马车房能吸引更高层次的旅客。与这些旅人交流，能增加你攀爬社会阶梯的机会。每天投入此类活动，将累积 5% 的概率，让你能够收到与当地贵族、要人共进晚餐的邀请函。与 DM 协商，决定这次见面将如何展开，可能为你的酒馆经营带来新的机遇。',
+    hasTable: false },
+  { key: 'spying',       name: '收集隐秘情报', en: 'Spying',          prereq: 'snug',          freq: '十天一次',
+    desc: '每天累积 5% 几率获区域派系信息。在秘密表投 d100。',
+    descFull: '你的包间吸引了那些可能怀揣秘密的客人。每天投入此活动，将累积 5% 的概率，让你获得关于区域内某一派系的信息。在"秘密表"上进行投 d100，以确定受影响的是哪个派系。',
+    hasTable: true, table: 'secret' },
+];
+
+// 修整期 d100 表
+const DOWNTIME_TABLES = {
+  banquet: {
+    title: '宴会表',
+    rows: [
+      { range: [1, 10],   text: '啊哈！您的活动吸引到了当地非常重要的人物到场。不幸的是，他们在第二天死于食物中毒。您收到 3d10×10gp 的罚款，在下次骰此表时获得 -15 减值，并在下次骰生意结果表时 -25。' },
+      { range: [11, 20],  text: '您努力主推的菜品有质量问题，长满了蛆虫。您只能临时用烘肉卷代替。为您的下次生意结果表投骰 -15。' },
+      { range: [21, 40],  text: '您的一个顾客喝太多了开始闹事。骰 d6：1-3 顾客爆出有用的秘密（DM 决定）；4-5 闹事给酒馆蒙上坏名声；6 顾客被呕吐物噎死，死后化身为沉醉怨灵来祸害酒馆。' },
+      { range: [41, 80],  text: '您得到了当地有影响力的人物的青睐。选择一个背景，到明年时可以请求其帮助，获得与背景对应特性的好处。' },
+      { range: [81, 90],  text: '您的活动大获成功，您的顾客给了您一些建议。生意获得 3d10×5gp 的奖励，并在下一次生意结果表获得 +10 加值。' },
+      { range: [91, 100], text: '您办了一场极佳而难忘的活动，同时获得 41-90 的全部好处。' },
+    ],
+  },
+  brew: {
+    title: '酿酒表',
+    rows: [
+      { range: [1, 10],   text: '嘶！发酵出问题了，表面长了危险的霉菌。当您打开这小桶时，它会用黑布丁的数据对您发起攻击。' },
+      { range: [11, 20],  text: '呃啊！您在这批次以及之后的批次上用的酵母受污染了。仍在发酵的酒全完了。' },
+      { range: [21, 40],  text: '还不错，但出了点问题。骰 d6：1-3 酒一般，没挣钱；4-6 挺好的，获得 1d8×5gp。然而您酿的酒引来了一个酵灵的注意。' },
+      { range: [41, 80],  text: '很棒的酒。您通过售卖这批酒获得了 2d8×5gp。' },
+      { range: [81, 90],  text: '完美！您通过售卖这批酒获得了 4d8×5gp。重投您投过的 1。' },
+      { range: [91, 100], text: '您觉得您一辈子都再也酿不出这样的琼浆玉液了。获得 6d8×5gp。但您下个十天无法再进行任何修整期活动了。' },
+    ],
+  },
+  dance: {
+    title: '舞会表',
+    rows: [
+      { range: [1, 10],   text: '舞会在混乱中结束了——跳舞的人打起来了！花费 1d8×10 用于维修破损，如付了额外安保，维修费可减 40gp。您在下次骰生意结果表时获得 -15 减值。' },
+      { range: [11, 20],  text: '您的头牌乐队出了岔子，没到现场。您只好临时找了顶班的乐队，然而他们烂透了。您在下次骰生意结果表时获得 -10 减值。' },
+      { range: [21, 40],  text: '您的舞会受到了当地黑社会的注意，他们让您付款来保证"安保情况"。DM 决定哪个黑帮参与。在您解决争端之前，必须付 1d6×10gp 才能再次掷骰。' },
+      { range: [41, 80],  text: '很成功的舞会。您的生意获得 2d8×5gp。' },
+      { range: [81, 90],  text: '您的舞会成功到了获得当地报纸的报道。您的生意获得 4d8×10gp，您在下次举行舞会的时候获得 +20 加值。' },
+      { range: [91, 100], text: '这场舞会简直是百年一遇级别的盛会。获得 6d8×5gp，并在您下次骰生意结果表时获得 +20 加值。' },
+    ],
+  },
+  distill: {
+    title: '蒸馏酒表',
+    rows: [
+      { range: [1, 10],   text: '您成功制作了浓缩甲醇。好消息是装瓶之前发现了此事。坏消息是——过一个 DC15 的体质豁免，失败则当场瞎掉，直到次级复原术或类似法术治愈。' },
+      { range: [11, 20],  text: '轰！您的酒炸了！没人受伤，但如果没上保险，您要付 3d10×5gp。' },
+      { range: [21, 40],  text: '您的酒可以喝，但对大多数顾客而言太烈了。骰 d6：1-3 卖得不太好，只赚 1d10×5gp；4-6 把酒兜售给了矮人，赚 3d10×5gp。' },
+      { range: [41, 80],  text: '很棒的酒。您通过售卖这批酒获得了 2d10×5gp。' },
+      { range: [81, 90],  text: '哇，上品酒！您赚得了 4d10×5gp。而且下次使用同样的原料酿酒时，在此表上的投骰获得 +10 加值。' },
+      { range: [91, 100], text: '喝下这杯酒，您顿悟了。您通过售卖这批酒获得了 6d10×5gp，并且相当于施放了卜筮术。' },
+    ],
+  },
+  contacts: {
+    title: '找联络人表',
+    rows: [
+      { range: [1, 10],   text: '您笨拙的询问激起了别人的敌意。这个角色或组织现在是您的敌人。DM 决定谁被冒犯，玩家决定 PC 如何冒犯。' },
+      { range: [11, 20],  text: '您交谈的人没提供任何有用的信息。找联络人失败了。' },
+      { range: [21, 40],  text: '您成功找到了联络人，但此人需要什么东西。可引入中下阶层 NPC，先需要帮助（向黑社会负债、想和朋友约会等）。DM 决定。' },
+      { range: [41, 80],  text: '您找到了一个有用于收集信息的联络人。可以联系他回答合理问题，提供简单帮助。' },
+      { range: [81, 90],  text: '您找到了强大组织内的联络人：公会、宗教教派、政府机构（城市守卫、法院、民兵）。DM 决定影响范围。' },
+      { range: [91, 100], text: '您找到了最高阶层的联络人——男爵、高级委员会成员、王室成员。可获得 DM 认为可行的帮助。' },
+    ],
+  },
+  smuggling: {
+    title: '走私表',
+    rows: [
+      { range: [1, 10],   text: '深水城的守夜人突袭了您的酒馆，没收走私货物并将您投入牢笼。被囚十日，需支付 3d10×5gp 罚款，否则一年苦役。' },
+      { range: [11, 20],  text: '您的秘密交易引起了当地黑帮的注意，他们上门索要分红。若不支付 10% 利润，将卷土重来强行夺取所有财富。' },
+      { range: [21, 40],  text: '守夜人派遣卧底探员潜入酒馆监视，但没有直接证据。接下来十天内若继续走私，下次在本表的骰投承受 -10。' },
+      { range: [41, 80],  text: '风平浪静，至少目前如此。继续还是收手？' },
+      { range: [81, 90],  text: '当地犯罪集团认可了您的运作，送来 1d4×5gp 意外之财。' },
+      { range: [91, 100], text: '本地犯罪头目邀请您参加秘密会议。若留下好印象，下次在本表的骰投获得 +20 加成。' },
+    ],
+  },
+  secret: {
+    title: '秘密表',
+    rows: [
+      { range: [1, 10],   text: '秘密涉及冒险团队中的一位成员！' },
+      { range: [11, 20],  text: '您得知了关于区域内某街头帮派的有趣秘密。' },
+      { range: [21, 40],  text: '秘密与一位过路的旅人相关。' },
+      { range: [41, 80],  text: '您得知了关于附近另一家商号的有趣秘密。' },
+      { range: [81, 90],  text: '秘密与一个敌对派系或对手有关。' },
+      { range: [91, 100], text: '您得知了关于区域内一位政府官员、高级神职人员或行会领袖的有趣秘密。' },
+    ],
+  },
+};
+
+// ============================================================================
+// 状态管理
+// ============================================================================
+
+const STORAGE_KEY = 'tavernKeeperSave_v1';
+
+function defaultState() {
+  return {
+    meta: { tavernName: '巨魔颅骨酒馆', day: 1, gold: 0, version: 1 },
+    facilities: {
+      taproom: 0, kitchen: 0, larder: 0, cellar: 0,
+      beer_engine: 0, beer_garden: 0, brewery: 0, distillery: 0,
+      feasting_hall: 0, guest_bedrooms: 0, lavatories: 0, office: 0,
+      snug: 0, saloon_bar: 0, stage: 0, dancefloor: 0,
+      stables: 0, coach_house: 0,
+    },
+    investments: { maintenance: false, insurance: false, security: false, service: false },
+    flags: {}, // key: {name, amount, kind: 'buff'|'debuff', removable: true}
+    tempBonus: 0,
+    cycleActivity: null, // 本旬选择的修整期活动 { key, days } 或 null
+    lastEvent: { cost: 0, delta: 0 }, // 本旬事件已应用效果（重投时退还；结算时清零）
+    history: [],
+    activities: {
+      daysSpent: {},
+      brewQueue: [],
+      rareIngredients: 0,
+    },
+    lastSettleTime: null,
+  };
+}
+
+function trollskullPreset() {
+  return {
+    taproom: 1, kitchen: 1, larder: 1, cellar: 1,
+    beer_engine: 0, beer_garden: 0, brewery: 0, distillery: 0,
+    feasting_hall: 0, guest_bedrooms: 0, lavatories: 0, office: 0,
+    snug: 0, saloon_bar: 0, stage: 0, dancefloor: 0,
+    stables: 0, coach_house: 0,
+  };
+}
+
+let state = loadState();
+
+function loadState() {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      // 简单的版本兼容：合并默认值的字段
+      const def = defaultState();
+      return {
+        ...def,
+        ...parsed,
+        meta: { ...def.meta, ...(parsed.meta || {}) },
+        facilities: { ...def.facilities, ...(parsed.facilities || {}) },
+        investments: { ...def.investments, ...(parsed.investments || {}) },
+        flags: parsed.flags || {},
+        activities: { ...def.activities, ...(parsed.activities || {}) },
+      };
+    }
+  } catch (e) {
+    console.warn('localStorage 不可用或读取失败（可能在受限 iframe 中），使用默认值:', e);
+    setTimeout(() => {
+      toast('自动保存不可用（受限环境），请用导出 JSON 备份', 'error');
+    }, 500);
+  }
+  return defaultState();
+}
+
+let saveTimer = null;
+let lastSaveTime = null;
+let storageWarningShown = false;
+
+function saveState(immediate = false) {
+  const doSave = () => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      lastSaveTime = new Date();
+      updateSaveStatus();
+    } catch (e) {
+      console.warn('localStorage 写入失败:', e);
+      if (!storageWarningShown) {
+        storageWarningShown = true;
+        const status = $('#save-status');
+        if (status) {
+          status.textContent = '⚠ 自动保存不可用（受限环境），请手动导出';
+          status.style.color = 'var(--crimson)';
+        }
+      }
+    }
+  };
+  if (immediate) {
+    doSave();
+  } else {
+    if (saveTimer) clearTimeout(saveTimer);
+    saveTimer = setTimeout(doSave, 800);
+  }
+}
+
+function updateSaveStatus() {
+  const el = document.getElementById('save-status');
+  if (!lastSaveTime) {
+    el.textContent = '尚未保存';
+    return;
+  }
+  const diff = Math.floor((Date.now() - lastSaveTime.getTime()) / 1000);
+  if (diff < 5) el.textContent = '刚刚已保存';
+  else if (diff < 60) el.textContent = `${diff} 秒前已保存`;
+  else if (diff < 3600) el.textContent = `${Math.floor(diff / 60)} 分钟前已保存`;
+  else el.textContent = lastSaveTime.toLocaleTimeString() + ' 已保存';
+}
+
+// ============================================================================
+// 工具函数
+// ============================================================================
+
+function $(sel) { return document.querySelector(sel); }
+function $$(sel) { return document.querySelectorAll(sel); }
+
+function rollDie(faces) {
+  return Math.floor(Math.random() * faces) + 1;
+}
+
+// 解析骰子表达式：'3d10*5', '1d6*10', '8d8', '20+1d12', '50', '2d4*400'
+function evalDiceExpr(expr) {
+  if (expr == null) return { total: 0, rolls: [], breakdown: '' };
+  expr = String(expr).trim();
+  // 拆为加号段
+  const parts = expr.split('+').map(s => s.trim());
+  let total = 0;
+  const allRolls = [];
+  const breakdowns = [];
+
+  for (const part of parts) {
+    // 形如 NdM[*K]
+    const m = part.match(/^(\d*)d(\d+)(?:\*(\d+))?$/);
+    if (m) {
+      const n = parseInt(m[1] || '1', 10);
+      const faces = parseInt(m[2], 10);
+      const mult = parseInt(m[3] || '1', 10);
+      const rolls = [];
+      let sub = 0;
+      for (let i = 0; i < n; i++) {
+        const r = rollDie(faces);
+        rolls.push(r);
+        sub += r;
+      }
+      const subtotal = sub * mult;
+      total += subtotal;
+      allRolls.push(...rolls);
+      const multStr = mult > 1 ? `×${mult}` : '';
+      breakdowns.push(`[${rolls.join('+')}]${multStr}=${subtotal}`);
+    } else if (/^\d+$/.test(part)) {
+      const v = parseInt(part, 10);
+      total += v;
+      breakdowns.push(`${v}`);
+    }
+  }
+
+  return {
+    total,
+    rolls: allRolls,
+    breakdown: breakdowns.join(' + '),
+  };
+}
+
+function getTierByScore(score) {
+  for (const t of TIERS) {
+    if (score >= t.min && score <= t.max) return t;
+  }
+  return TIERS[0];
+}
+
+function calcTotalScore() {
+  let total = 0;
+  for (const f of FACILITIES) {
+    const tier = state.facilities[f.key] || 0;
+    if (tier > 0) total += f.bonus[tier - 1];
+  }
+  return total;
+}
+
+function calcPermanentBonus() {
+  let bonus = 0;
+  for (const k in state.flags) {
+    const flag = state.flags[k];
+    if (flag.kind === 'buff') bonus += flag.amount;
+    else if (flag.kind === 'debuff') bonus -= flag.amount;
+  }
+  return bonus;
+}
+
+// 计算本旬活动效果（加值 + 费用 + 备注）
+// A 类活动 effect 标准配置
+// 来源：ACTIVITIES descFull 字段（PDF p.12-19）
+// 仅含直接影响生意结果的 6 个活动；其他活动走修整期 tab
+const ACTIVITY_EFFECTS = {
+  barbecue: {
+    bonus: (d) => 2 * d,
+    cost: (d) => 0,
+    rolls: (d) => [],
+    bill: null,
+    crossEffect: 'fire_loss_doubled',
+    flow: ['每天 +2 加值', '火灾类事件损失 ×2（若未购保险，事件查询时自动应用）'],
+  },
+  feast: {
+    bonus: (d) => 2 * d,
+    cost: (d) => d,
+    rolls: (d) => [],
+    bill: null,
+    flow: ['每天 1gp 原料', '每天 +2 加值'],
+  },
+  marketing: {
+    bonus: (d) => 2 * d,
+    cost: (d, rolls) => rolls.reduce((s, r) => s + r, 0),
+    rolls: (d) => [{ n: d, faces: 3, label: '花费骰' }],
+    bill: null,
+    flow: ['投 {d}d3 = X gp 花费', '每天 +2 加值'],
+  },
+  entertainment: {
+    bonus: (d, rolls) => rolls.reduce((s, r) => s + (r % 2 === 1 ? 1 : 3), 0),
+    cost: (d) => 2 * d,
+    rolls: (d) => [{ n: d, faces: 6, label: '加值骰' }],
+    bill: null,
+    flow: ['每天投 1d6：奇+1 / 偶+3', '每天 -2gp'],
+  },
+  beer_festival: {
+    bonus: (d, rolls) => rolls.reduce((s, r) => s + r, 0),
+    cost: () => 0,
+    rolls: () => [{ n: 6, faces: 6, label: '加值骰' }],
+    bill: (rolls, inv) => (!inv.maintenance && !inv.security) ? rolls.reduce((s, r) => s + r, 0) : 0,
+    billReason: '未购预防性维护且未购额外安保',
+    flow: ['投 6d6 = X 加值', '加入下次生意结果投掷', '若未购维护+安保 → 受 X gp 修复账单'],
+  },
+  smuggling: {
+    bonus: (d) => 4 * d,
+    cost: () => 0,
+    rolls: () => [],
+    bill: null,
+    followUp: '走私表（结算后投，每天 -5 惩罚，见修整期 tab）',
+    flow: ['每天 +4 加值', '结算后投走私表（每天 -5）'],
+  },
+};
+
+// 通用 effect 执行器
+// preview=true 用平均值预估（用于 UI hint 展示）；preview=false 真投骰（用于 queryBusiness）
+function executeActivityEffect(activityKey, days, { preview = false } = {}) {
+  const spec = ACTIVITY_EFFECTS[activityKey];
+  if (!spec) {
+    return {
+      bonus: 0, cost: 0, rolls: [], rollSpecs: [],
+      bill: 0, billReason: '', followUp: '',
+      flow: ['此活动在修整期 tab 处理，本旬不影响生意结果'],
+    };
+  }
+  const d = Math.max(1, days || 1);
+
+  const rollSpecs = spec.rolls(d);
+  const rolledValues = [];
+  rollSpecs.forEach(rs => {
+    for (let i = 0; i < rs.n; i++) {
+      rolledValues.push(preview ? Math.ceil(rs.faces / 2) : rollDie(rs.faces));
+    }
+  });
+
+  const bonus = spec.bonus(d, rolledValues);
+  const cost = spec.cost(d, rolledValues);
+  const bill = spec.bill ? spec.bill(rolledValues, state.investments) : 0;
+  const billReason = bill > 0 ? (spec.billReason || '') : '';
+
+  return {
+    bonus,
+    cost,
+    bill,
+    billReason,
+    rolls: rolledValues,
+    rollSpecs,
+    flow: spec.flow.map(s => s.replace('{d}', String(d))),
+    followUp: spec.followUp || '',
+  };
+}
+
+function isPrereqMet(facility) {
+  return facility.prereq.every(p => (state.facilities[p] || 0) > 0);
+}
+
+function toast(msg, type = 'info') {
+  const el = document.createElement('div');
+  el.className = 'toast ' + type;
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => {
+    el.style.transition = 'opacity 0.3s';
+    el.style.opacity = '0';
+    setTimeout(() => el.remove(), 300);
+  }, 2400);
+}
+
+// ============================================================================
+// Modal 系统（替代 confirm/prompt/alert，兼容 iframe/Notion 沙箱）
+// ============================================================================
+
+function showModal(contentNode, { onMount } = {}) {
+  return new Promise(resolve => {
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.appendChild(contentNode);
+    const root = $('#modal-root');
+    root.appendChild(overlay);
+    // 触发淡入
+    requestAnimationFrame(() => overlay.classList.add('visible'));
+
+    const close = (result) => {
+      overlay.classList.remove('visible');
+      setTimeout(() => {
+        overlay.remove();
+        resolve(result);
+      }, 180);
+    };
+
+    // 遮罩点击 = 取消
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) close(null);
+    });
+
+    // Esc 键 = 取消
+    const escHandler = (e) => {
+      if (e.key === 'Escape') {
+        document.removeEventListener('keydown', escHandler);
+        close(null);
+      }
+    };
+    document.addEventListener('keydown', escHandler);
+
+    if (onMount) onMount({ close, escHandler });
+  });
+}
+
+function showConfirm(message, opts = {}) {
+  const {
+    title = '请确认',
+    okText = '确定',
+    cancelText = '取消',
+    danger = false,
+    primaryAction = null, // 自定义主按钮动作（变体加值场景）
+  } = opts;
+
+  const dialog = document.createElement('div');
+  dialog.className = 'modal-dialog';
+
+  const titleClass = danger ? 'modal-title danger' : 'modal-title';
+  const titleIcon = danger ? '⚠' : '✦';
+  const okClass = danger ? 'btn danger' : 'btn primary';
+
+  dialog.innerHTML = `
+    <div class="${titleClass}"><span class="modal-title-icon">${titleIcon}</span>${escapeHtml(title)}</div>
+    <div class="modal-message">${escapeHtml(message)}</div>
+    <div class="modal-actions">
+      <button class="btn" data-modal-cancel>${escapeHtml(cancelText)}</button>
+      <button class="${okClass}" data-modal-ok>${escapeHtml(okText)}</button>
+    </div>
+  `;
+
+  return showModal(dialog, {
+    onMount: ({ close, escHandler }) => {
+      const okBtn = dialog.querySelector('[data-modal-ok]');
+      const cancelBtn = dialog.querySelector('[data-modal-cancel]');
+      okBtn.addEventListener('click', () => close(true));
+      cancelBtn.addEventListener('click', () => close(false));
+      okBtn.focus();
+      // Enter = 确认（仅当 focus 在按钮上时由原生处理；额外加全局 Enter）
+      const enterHandler = (e) => {
+        if (e.key === 'Enter' && !e.target.matches('textarea')) {
+          document.removeEventListener('keydown', enterHandler);
+          close(true);
+        }
+      };
+      document.addEventListener('keydown', enterHandler);
+      // 清理 escHandler 防止泄漏
+      const origClose = close;
+    },
+  });
+}
+
+function showPrompt(message, defaultValue = '', opts = {}) {
+  const {
+    title = '输入',
+    okText = '确定',
+    cancelText = '取消',
+    multiline = false,
+    placeholder = '',
+  } = opts;
+
+  const dialog = document.createElement('div');
+  dialog.className = 'modal-dialog';
+
+  const inputHtml = multiline
+    ? `<textarea class="modal-textarea" data-modal-input placeholder="${escapeHtml(placeholder)}">${escapeHtml(defaultValue)}</textarea>`
+    : `<input type="text" class="modal-input" data-modal-input value="${escapeHtml(defaultValue)}" placeholder="${escapeHtml(placeholder)}">`;
+
+  dialog.innerHTML = `
+    <div class="modal-title"><span class="modal-title-icon">✎</span>${escapeHtml(title)}</div>
+    <div class="modal-message">${escapeHtml(message)}</div>
+    ${inputHtml}
+    <div class="modal-actions">
+      <button class="btn" data-modal-cancel>${escapeHtml(cancelText)}</button>
+      <button class="btn primary" data-modal-ok>${escapeHtml(okText)}</button>
+    </div>
+  `;
+
+  return showModal(dialog, {
+    onMount: ({ close }) => {
+      const input = dialog.querySelector('[data-modal-input]');
+      const okBtn = dialog.querySelector('[data-modal-ok]');
+      const cancelBtn = dialog.querySelector('[data-modal-cancel]');
+      okBtn.addEventListener('click', () => close(input.value));
+      cancelBtn.addEventListener('click', () => close(null));
+      if (input) {
+        input.focus();
+        if (!multiline) input.select();
+      }
+      const enterHandler = (e) => {
+        if (e.key === 'Enter' && !e.target.matches('textarea')) {
+          e.preventDefault();
+          document.removeEventListener('keydown', enterHandler);
+          close(input.value);
+        }
+      };
+      document.addEventListener('keydown', enterHandler);
+    },
+  });
+}
+
+function showAlert(message, opts = {}) {
+  const { title = '提示', okText = '知道了' } = opts;
+  const dialog = document.createElement('div');
+  dialog.className = 'modal-dialog';
+  dialog.innerHTML = `
+    <div class="modal-title"><span class="modal-title-icon">✦</span>${escapeHtml(title)}</div>
+    <div class="modal-message">${escapeHtml(message)}</div>
+    <div class="modal-actions">
+      <button class="btn primary" data-modal-ok>${escapeHtml(okText)}</button>
+    </div>
+  `;
+  return showModal(dialog, {
+    onMount: ({ close }) => {
+      const okBtn = dialog.querySelector('[data-modal-ok]');
+      okBtn.addEventListener('click', () => close(true));
+      okBtn.focus();
+      const enterHandler = (e) => {
+        if (e.key === 'Enter') {
+          document.removeEventListener('keydown', enterHandler);
+          close(true);
+        }
+      };
+      document.addEventListener('keydown', enterHandler);
+    },
+  });
+}
+
+// 自定义双选项 Modal（用于事件变体加值：服务/无服务）
+function showChoice(message, opts = {}) {
+  const {
+    title = '请选择',
+    primaryText = '选项 A',
+    secondaryText = '选项 B',
+    primaryValue = true,
+    secondaryValue = false,
+  } = opts;
+  const dialog = document.createElement('div');
+  dialog.className = 'modal-dialog';
+  dialog.innerHTML = `
+    <div class="modal-title"><span class="modal-title-icon">✦</span>${escapeHtml(title)}</div>
+    <div class="modal-message">${escapeHtml(message)}</div>
+    <div class="modal-actions">
+      <button class="btn" data-modal-secondary>${escapeHtml(secondaryText)}</button>
+      <button class="btn primary" data-modal-primary>${escapeHtml(primaryText)}</button>
+    </div>
+  `;
+  return showModal(dialog, {
+    onMount: ({ close }) => {
+      const pBtn = dialog.querySelector('[data-modal-primary]');
+      const sBtn = dialog.querySelector('[data-modal-secondary]');
+      pBtn.addEventListener('click', () => close(primaryValue));
+      sBtn.addEventListener('click', () => close(secondaryValue));
+      pBtn.focus();
+    },
+  });
+}
+
+function escapeHtml(str) {
+  if (str == null) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+// ============================================================================
+// 渲染
+// ============================================================================
+
+function renderAll() {
+  renderHeader();
+  renderOverview();
+  renderFacilities();
+  renderOps();
+  renderDowntime();
+  renderRules();
+}
+
+function renderHeader() {
+  $('#tavern-name').value = state.meta.tavernName;
+  $('#current-day').value = state.meta.day;
+  $('#current-gold').value = state.meta.gold;
+  const total = calcTotalScore();
+  const tier = getTierByScore(total);
+  $('#tier-mini').textContent = tier.name;
+  $('#score-mini').textContent = total;
+}
+
+function renderOverview() {
+  const total = calcTotalScore();
+  const tier = getTierByScore(total);
+
+  // 评级徽章
+  $('#tier-emblem-container').innerHTML = tierEmblemSVG(tier);
+  $('#overview-tier').textContent = tier.name;
+  $('#overview-tier-en').textContent = tier.en;
+  $('#overview-tier').style.color = tier.color;
+
+  // 进度条
+  const nextTier = TIERS.find(t => t.min > total);
+  let fillPercent, labelText;
+  if (tier.id === 'aristocratic') {
+    fillPercent = 100;
+    labelText = `已达顶级（${total} 分）`;
+  } else if (nextTier) {
+    const range = tier.max - tier.min + 1;
+    const inRange = total - tier.min + 1;
+    fillPercent = (inRange / range) * 100;
+    labelText = `→ ${nextTier.min} 升级到 ${nextTier.name}`;
+  } else {
+    fillPercent = 0;
+    labelText = '0 分';
+  }
+  $('#score-fill').style.width = fillPercent + '%';
+  $('#score-current').textContent = `${total} 分`;
+  $('#score-next').textContent = labelText;
+
+  // buff/debuff 列表
+  const buffList = $('#buff-list');
+  const flags = Object.entries(state.flags);
+  if (flags.length === 0) {
+    buffList.innerHTML = '<li class="history-empty">暂无生效中的项目</li>';
+  } else {
+    buffList.innerHTML = flags.map(([k, f]) => `
+      <li class="buff-item">
+        <span class="${f.kind === 'buff' ? 'buff-positive' : 'buff-negative'}">${f.name}</span>
+        <span>
+          <span class="buff-amount ${f.kind === 'buff' ? 'buff-positive' : 'buff-negative'}">
+            ${f.kind === 'buff' ? '+' : '-'}${f.amount}
+          </span>
+          ${f.removable ? `<button class="btn small" onclick="removeFlag('${k}')">移除</button>` : ''}
+        </span>
+      </li>
+    `).join('');
+  }
+
+  // 临时加值
+  const tempTotal = state.tempBonus + calcPermanentBonus();
+  const tempEl = $('#temp-bonus-summary');
+  const permBonus = calcPermanentBonus();
+  tempEl.innerHTML = `
+    永久加值：${permBonus >= 0 ? '+' : ''}${permBonus}<br>
+    本次事件临时加值：${state.tempBonus >= 0 ? '+' : ''}${state.tempBonus}<br>
+    <strong style="font-size: 16px;">合计：${tempTotal >= 0 ? '+' : ''}${tempTotal}</strong>
+  `;
+
+  // 最近一次经营
+  const last = state.history[state.history.length - 1];
+  if (last) {
+    $('#last-cycle-summary').innerHTML = `
+      <strong>第 ${last.day} 日</strong> ·
+      事件 #${last.eventRoll}: ${last.eventText.substring(0, 50)}${last.eventText.length > 50 ? '...' : ''}<br>
+      生意结果: ${last.bizRoll} → <strong>${last.bizResult}</strong>
+    `;
+  } else {
+    $('#last-cycle-summary').textContent = '尚未进行任何经营周期';
+  }
+
+  // 近期结算卡片（倒序 3 条）
+  const recentEl = $('#recent-cycle-list');
+  if (state.history.length === 0) {
+    recentEl.innerHTML = '<div class="history-empty" style="padding: 16px;">尚未进行任何经营周期</div>';
+  } else {
+    const recent = [...state.history].slice(-3).reverse();
+    recentEl.innerHTML = recent.map((h, idx) => {
+      const totalChange = (h.goldDelta || 0) - (h.activityCost || 0);
+      const changeColor = totalChange >= 0 ? 'var(--moss)' : 'var(--crimson)';
+      const eventShort = h.eventText.length > 60 ? h.eventText.substring(0, 60) + '...' : h.eventText;
+      const detailId = `recent-detail-${idx}`;
+      const bonusRows = (h.bonusDetail || []).map(d => `
+        <div style="display: flex; justify-content: space-between; padding: 2px 0; font-size: 12px;">
+          <span>${d.label}</span>
+          <span style="color: ${d.amount >= 0 ? 'var(--moss)' : 'var(--crimson)'};">${d.amount >= 0 ? '+' : ''}${d.amount}</span>
+        </div>
+      `).join('');
+      const activityLine = h.activityLabel ? `
+        <div style="margin-top: 6px; font-size: 12px;">
+          <strong>活动：</strong>${h.activityLabel}（${h.activityDays}天）
+          ${h.activityCost ? ` · 花费 <span style="color: var(--crimson);">-${h.activityCost}gp</span>` : ''}
+        </div>
+      ` : '';
+      const diceLine = h.diceBreakdown ? `
+        <div style="margin-top: 4px; font-size: 12px; color: var(--ink-soft);">金额骰：${h.diceBreakdown}</div>
+      ` : '';
+      const invKeys = Object.entries(h.investments || {}).filter(([_, v]) => v).map(([k]) => {
+        const inv = INVESTMENTS.find(x => x.key === k);
+        return inv ? inv.name : k;
+      });
+      const invLine = invKeys.length > 0 ? `
+        <div style="margin-top: 4px; font-size: 12px; color: var(--ink-soft);">本旬投资：${invKeys.join('、')}</div>
+      ` : '';
+      return `
+        <div class="history-item recent-item" style="cursor: pointer;" data-detail-id="${detailId}">
+          <div><strong>第 ${h.day} 日</strong></div>
+          <div style="flex: 1;">
+            <div style="font-size: 13px;">事件 #${h.eventRoll}: ${eventShort}</div>
+            <div style="color: var(--ink-soft); margin-top: 2px; font-size: 12px;">骰值 ${h.originalVal || h.bizRoll} → 查表 ${h.finalVal || h.bizRoll} · ${h.bizResult}</div>
+          </div>
+          <div style="text-align: right;">
+            <span style="font-family: var(--font-mono); font-weight: 600; color: ${changeColor};">
+              ${totalChange >= 0 ? '+' : ''}${totalChange}gp
+            </span>
+            <div style="font-size: 10px; color: var(--ink-faint);">点击展开</div>
+          </div>
+        </div>
+        <div id="${detailId}" style="display: none; padding: 10px 14px; background: var(--parchment-dark); border: 1px dotted var(--ink-faint); border-top: none; font-size: 12px;">
+          <div style="font-weight: 600; margin-bottom: 4px;">事件全文：</div>
+          <div style="margin-bottom: 6px;">${h.eventText}</div>
+          ${(h.bonusDetail || []).length > 0 ? `
+            <div style="font-weight: 600; margin-top: 6px;">加值明细：</div>
+            ${bonusRows}
+            <div style="display: flex; justify-content: space-between; padding: 2px 0; font-size: 12px; border-top: 1px dashed var(--ink-faint); margin-top: 4px;">
+              <span>查表值</span><span><strong>${h.originalVal}</strong> + ${h.finalVal - h.originalVal} = <strong>${h.finalVal}</strong></span>
+            </div>
+          ` : ''}
+          ${diceLine}
+          ${activityLine}
+          ${invLine}
+        </div>
+      `;
+    }).join('');
+
+    // 绑定点击展开
+    recentEl.querySelectorAll('.recent-item').forEach(item => {
+      item.addEventListener('click', () => {
+        const detail = document.getElementById(item.dataset.detailId);
+        if (detail) detail.style.display = detail.style.display === 'none' ? 'block' : 'none';
+      });
+    });
+  }
+
+  // 查看全部按钮
+  const gotoBtn = $('#goto-history-btn');
+  gotoBtn.onclick = () => {
+    switchTab('ops');
+    setTimeout(() => {
+      const list = $('#history-list');
+      if (list) list.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 50);
+  };
+}
+
+function tierEmblemSVG(tier) {
+  // 简单的纹章 SVG，不同评级不同样式
+  const colors = {
+    squalid: '#6B4423', poor: '#8B5A2B', modest: '#A87C4A',
+    comfortable: '#3D5C3A', wealthy: '#B8860B', aristocratic: '#8B2C2C',
+  };
+  const c = colors[tier.id] || '#3B2F1A';
+  const label = tier.name;
+  // 不同等级不同纹饰数量
+  const stars = { squalid: 0, poor: 1, modest: 2, comfortable: 3, wealthy: 4, aristocratic: 5 }[tier.id];
+
+  let starsSvg = '';
+  for (let i = 0; i < stars; i++) {
+    const angle = (i / stars) * 360 - 90;
+    const r = 40;
+    const x = 60 + r * Math.cos(angle * Math.PI / 180);
+    const y = 60 + r * Math.sin(angle * Math.PI / 180);
+    starsSvg += `<text x="${x}" y="${y + 4}" text-anchor="middle" font-size="16" fill="${c}">✦</text>`;
+  }
+
+  return `<svg class="tier-emblem" viewBox="0 0 120 120">
+    <circle cx="60" cy="60" r="55" fill="none" stroke="${c}" stroke-width="2"/>
+    <circle cx="60" cy="60" r="48" fill="none" stroke="${c}" stroke-width="1"/>
+    <circle cx="60" cy="60" r="40" fill="${c}" opacity="0.1"/>
+    <text x="60" y="68" text-anchor="middle" font-family="serif" font-size="28" fill="${c}" font-weight="bold">${label}</text>
+    ${starsSvg}
+    <path d="M 60 5 L 65 15 L 60 12 L 55 15 Z" fill="${c}"/>
+    <path d="M 60 115 L 65 105 L 60 108 L 55 105 Z" fill="${c}"/>
+  </svg>`;
+}
+
+function renderFacilities() {
+  const tbody = $('#facility-tbody');
+  tbody.innerHTML = FACILITIES.map(f => {
+    const owned = state.facilities[f.key] || 0;
+    const met = isPrereqMet(f);
+    const prereqText = f.prereq.length === 0
+      ? '—'
+      : f.prereq.map(p => {
+          const pf = FACILITIES.find(x => x.key === p);
+          const ok = (state.facilities[p] || 0) > 0;
+          return `<span class="${ok ? '' : 'unmet'}">${pf.name}</span>`;
+        }).join('、');
+    const cells = [0, 1, 2].map(i => {
+      const tier = i + 1;
+      const isOwned = owned >= tier;
+      const canBuy = met && owned === i; // 当前 i 档，可买下一档
+      const cls = `tier-cell ${isOwned ? 'owned' : ''} ${!met ? 'locked' : ''}`;
+      return `<td class="${cls}" data-facility="${f.key}" data-tier="${tier}">${f.price[i]}gp<br><small style="font-size: 10px; color: var(--ink-faint);">+${f.bonus[i]}</small></td>`;
+    }).join('');
+    const score = owned > 0 ? `+${f.bonus[owned - 1]}` : '—';
+    return `
+      <tr class="facility-row ${!met ? 'locked' : ''}">
+        <td>
+          <div class="facility-name">${f.name}</div>
+          <div class="facility-name-en">${f.en}</div>
+        </td>
+        <td class="facility-prereq">${prereqText}</td>
+        ${cells}
+        <td class="facility-score ${owned > 0 ? 'active' : ''}">${score}</td>
+        <td class="facility-activity">${f.activity}</td>
+      </tr>
+    `;
+  }).join('');
+
+  // 总分
+  const total = calcTotalScore();
+  const tier = getTierByScore(total);
+  $('#total-score').textContent = total;
+  $('#total-tier').textContent = tier.name + ' (' + tier.en + ')';
+
+  // 绑定点击
+  $$('.tier-cell').forEach(cell => {
+    cell.addEventListener('click', async () => {
+      const key = cell.dataset.facility;
+      const tier = parseInt(cell.dataset.tier, 10);
+      const f = FACILITIES.find(x => x.key === key);
+      if (!isPrereqMet(f)) {
+        const missing = f.prereq.filter(p => (state.facilities[p] || 0) === 0)
+          .map(p => FACILITIES.find(x => x.key === p).name).join('、');
+        toast(`需要先建造：${missing}`, 'error');
+        return;
+      }
+      const currentTier = state.facilities[key] || 0;
+      if (tier <= currentTier) {
+        // 点击已拥有档位 = 拆除为未拥有（不退款，PDF 未规定）
+        const currentName = ['廉价','中等','华贵'][currentTier - 1];
+        const bonusLost = f.bonus[currentTier - 1];
+        const ok = await showConfirm(
+          `确定将 ${f.name}（${currentName}档）拆除？\n评分将 -${bonusLost}，金额不退款。`,
+          { title: '拆除设施', danger: true, okText: '拆除' }
+        );
+        if (!ok) return;
+        state.facilities[key] = 0;
+      } else if (tier === currentTier + 1 || currentTier === 0) {
+        // 升一级或新建
+        const cost = f.price[tier - 1] - (currentTier > 0 ? f.price[currentTier - 1] : 0);
+        if (state.meta.gold < cost) {
+          toast(`金币不足，需要 ${cost}gp，当前 ${state.meta.gold}gp`, 'error');
+          return;
+        }
+        if (await showConfirm(`购买 ${f.name}（${['廉价','中等','华贵'][tier-1]}档），花费 ${cost}gp？`, { title: '购买设施', okText: '购买' })) {
+          state.facilities[key] = tier;
+          state.meta.gold -= cost;
+        } else return;
+      } else {
+        toast('必须逐级升级', 'error');
+        return;
+      }
+      saveState();
+      renderAll();
+    });
+  });
+}
+
+function renderOps() {
+  // 投资
+  const grid = $('#investment-grid');
+  grid.innerHTML = INVESTMENTS.map(inv => {
+    const active = state.investments[inv.key];
+    return `
+      <div class="invest-card ${active ? 'active' : ''}" data-invest="${inv.key}">
+        <div>
+          <div class="invest-name">${inv.name}</div>
+          <div class="invest-desc">${inv.desc}</div>
+        </div>
+        <div style="text-align: right;">
+          <div class="invest-cost">${inv.cost}gp</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  $$('.invest-card').forEach(card => {
+    card.addEventListener('click', () => {
+      const key = card.dataset.invest;
+      const inv = INVESTMENTS.find(x => x.key === key);
+      if (state.investments[key]) {
+        state.investments[key] = false;
+        state.meta.gold += inv.cost;
+      } else {
+        if (state.meta.gold < inv.cost) {
+          toast(`金币不足`, 'error');
+          return;
+        }
+        state.investments[key] = true;
+        state.meta.gold -= inv.cost;
+      }
+      saveState();
+      renderAll();
+    });
+  });
+
+  // 当前等级
+  const total = calcTotalScore();
+  const tier = getTierByScore(total);
+  $('#ops-current-tier').textContent = tier.name;
+
+  // 临时加值
+  const permBonus = calcPermanentBonus();
+  const tempPlusPerm = state.tempBonus + permBonus;
+  $('#ops-temp-bonus').textContent = (tempPlusPerm >= 0 ? '+' : '') + tempPlusPerm +
+    ` (事件 ${state.tempBonus >= 0 ? '+' : ''}${state.tempBonus} + 永久 ${permBonus >= 0 ? '+' : ''}${permBonus})`;
+
+  // 活动选择下拉填充
+  const select = $('#cycle-activity-select');
+  const daysInput = $('#cycle-activity-days');
+  const currentKey = state.cycleActivity ? state.cycleActivity.key : '';
+  const available = ACTIVITIES.filter(a => (state.facilities[a.prereq] || 0) > 0);
+  const locked = ACTIVITIES.filter(a => (state.facilities[a.prereq] || 0) === 0);
+  let optsHtml = '<option value="">— 无活动 —</option>';
+  if (available.length > 0) {
+    optsHtml += '<optgroup label="可用">';
+    available.forEach(a => {
+      optsHtml += `<option value="${a.key}" ${currentKey === a.key ? 'selected' : ''}>${a.name}</option>`;
+    });
+    optsHtml += '</optgroup>';
+  }
+  if (locked.length > 0) {
+    optsHtml += '<optgroup label="未解锁（需先建造前置设施）">';
+    locked.forEach(a => {
+      optsHtml += `<option value="${a.key}" disabled>${a.name}</option>`;
+    });
+    optsHtml += '</optgroup>';
+  }
+  select.innerHTML = optsHtml;
+  if (state.cycleActivity) {
+    daysInput.value = state.cycleActivity.days;
+  }
+
+  const updateActivity = (persist) => {
+    const key = select.value;
+    let days = parseInt(daysInput.value, 10);
+    if (isNaN(days) || days < 1) days = 1;
+    if (days > 10) days = 10;
+    daysInput.value = days;
+    if (!key) {
+      state.cycleActivity = null;
+    } else {
+      state.cycleActivity = { key, days };
+    }
+    const hint = $('#cycle-activity-hint');
+    if (!key) {
+      hint.innerHTML = '选择一项修整期活动投入本旬。仅影响生意结果的加值/费用会在结算时自动应用。';
+    } else {
+      const a = ACTIVITIES.find(x => x.key === key);
+      const eff = executeActivityEffect(key, days, { preview: true });
+      const bonusStr = eff.bonus >= 0 ? `+${eff.bonus}` : `${eff.bonus}`;
+      const totalCost = eff.cost + eff.bill;
+      const costStr = totalCost !== 0
+        ? `<span style="color: var(--crimson);">预估花费：${totalCost}gp${eff.bill > 0 ? `（含账单 ${eff.bill}）` : ''}</span>`
+        : `<span style="color: var(--ink-soft);">无直接花费</span>`;
+      const flowHtml = eff.flow.length > 0 ? `
+        <div style="margin-top: 8px; padding-top: 6px; border-top: 1px dashed var(--ink-faint);">
+          <strong>📋 本活动流程：</strong>
+          <ol style="margin: 4px 0 0 20px; padding: 0; color: var(--ink);">
+            ${eff.flow.map(step => `<li>${step}</li>`).join('')}
+          </ol>
+        </div>
+      ` : '';
+      const followUpHtml = eff.followUp ? `<div style="margin-top: 6px;"><em style="color: var(--gold);">⚠ ${eff.followUp}</em></div>` : '';
+      hint.innerHTML = `
+        <strong>${a.name}</strong>（${days} 天）· ${a.desc}<br>
+        <span style="color: var(--moss); font-weight: 600;">预估加值：${bonusStr}</span> · ${costStr}
+        ${followUpHtml}
+        ${flowHtml}
+      `;
+    }
+    if (persist) saveState();
+  };
+  select.onchange = () => updateActivity(true);
+  daysInput.onchange = () => updateActivity(true);
+  updateActivity(false);
+
+  // 历史
+  renderHistory();
+}
+
+function renderHistory() {
+  const list = $('#history-list');
+  if (state.history.length === 0) {
+    list.innerHTML = '<div class="history-empty">尚未进行任何经营周期</div>';
+    return;
+  }
+  const items = [...state.history].reverse();
+  list.innerHTML = items.map(h => `
+    <div class="history-item">
+      <div><strong>第 ${h.day} 日</strong></div>
+      <div>
+        <div>事件 #${h.eventRoll}: ${h.eventText.substring(0, 80)}${h.eventText.length > 80 ? '...' : ''}</div>
+        <div style="color: var(--ink-soft); margin-top: 2px;">生意 ${h.bizRoll} → ${h.bizResult}</div>
+      </div>
+      <div style="text-align: right;">
+        <span style="font-family: var(--font-mono); font-weight: 600; color: ${(h.goldDelta || 0) >= 0 ? 'var(--moss)' : 'var(--crimson)'};">
+          ${(h.goldDelta || 0) >= 0 ? '+' : ''}${h.goldDelta || 0}gp
+        </span>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderDowntime() {
+  const grid = $('#activity-grid');
+  // 排序：可用项排前，未解锁排后；组内保持 PDF 原顺序
+  const available = ACTIVITIES.filter(a => (state.facilities[a.prereq] || 0) > 0);
+  const locked = ACTIVITIES.filter(a => (state.facilities[a.prereq] || 0) === 0);
+  const sorted = [...available, ...locked];
+
+  const cards = sorted.map(a => {
+    const owned = state.facilities[a.prereq] || 0;
+    const isAvailable = owned > 0;
+    const prereqFacility = FACILITIES.find(f => f.key === a.prereq);
+    const tierName = ['未建造', '廉价', '中等', '华贵'][owned];
+
+    let tableHtml = '';
+    if (a.hasTable) {
+      tableHtml = `
+        <div class="activity-controls">
+          <input type="number" class="roll-input" placeholder="d100" id="roll-${a.key}" style="width: 70px;">
+          <button class="btn small" data-table-query="${a.table}">查询</button>
+          <button class="btn small" data-table-random="${a.table}">🎲</button>
+        </div>
+        <div class="roll-result empty" id="result-${a.key}" style="margin-top: 8px; padding: 8px; font-size: 13px;"></div>
+      `;
+    }
+
+    const expandBtn = isAvailable
+      ? `<button class="activity-expand-btn" data-expand="${a.key}">▼ 展开详情</button>`
+      : `<span style="font-size: 12px; color: var(--crimson); white-space: nowrap;">⚠ 未解锁</span>`;
+
+    return `
+      <div class="activity-card ${isAvailable ? '' : 'unavailable'}" data-activity-key="${a.key}">
+        <div class="activity-head">
+          <div class="activity-head-text">
+            <div class="activity-name">${a.name} <span style="font-style: italic; font-size: 12px; color: var(--ink-soft);">${a.en}</span></div>
+            <div class="activity-meta">频率: ${a.freq}</div>
+            <div class="activity-prereq-badge ${isAvailable ? 'met' : 'unmet'}">前置: ${prereqFacility.name} (${tierName})</div>
+          </div>
+          ${expandBtn}
+        </div>
+        <div class="activity-body">
+          <div class="activity-desc">${a.desc}</div>
+          <div class="activity-detail" id="detail-${a.key}" style="display: none;">
+            <div class="activity-desc-full">${a.descFull || a.desc}</div>
+            ${tableHtml}
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  const separator = locked.length > 0 && available.length > 0
+    ? '<div class="activity-section-label">— 以下活动未解锁（建造对应前置设施后可用） —</div>'
+    : '';
+
+  // 在第一个未解锁项前插入分隔标签
+  let finalHtml = '';
+  if (available.length > 0 && locked.length > 0) {
+    const availableHtml = available.map(a => renderActivityCard(a, true)).join('');
+    const lockedHtml = locked.map(a => renderActivityCard(a, false)).join('');
+    finalHtml = availableHtml + separator + lockedHtml;
+  } else {
+    finalHtml = cards;
+  }
+
+  grid.innerHTML = finalHtml;
+
+  // 绑定展开按钮
+  $$('[data-expand]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const key = btn.dataset.expand;
+      toggleActivityDetail(key, btn);
+    });
+  });
+
+  // 绑定查询按钮（已展开的卡片内）
+  $$('[data-table-query]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const tableKey = btn.dataset.tableQuery;
+      const input = $(`#roll-${ACTIVITIES.find(a => a.table === tableKey).key}`);
+      const val = parseInt(input.value, 10);
+      if (isNaN(val) || val < 1 || val > 100) {
+        toast('请输入 1-100 之间的骰值', 'error');
+        return;
+      }
+      queryDowntimeTable(tableKey, val);
+    });
+  });
+  $$('[data-table-random]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const tableKey = btn.dataset.tableRandom;
+      const val = rollDie(100);
+      const act = ACTIVITIES.find(a => a.table === tableKey);
+      $(`#roll-${act.key}`).value = val;
+      queryDowntimeTable(tableKey, val);
+    });
+  });
+
+  // 酿酒队列
+  renderBrewQueue();
+}
+
+function renderActivityCard(a, isAvailable) {
+  const owned = state.facilities[a.prereq] || 0;
+  const prereqFacility = FACILITIES.find(f => f.key === a.prereq);
+  const tierName = ['未建造', '廉价', '中等', '华贵'][owned];
+
+  let tableHtml = '';
+  if (a.hasTable) {
+    tableHtml = `
+      <div class="activity-controls">
+        <input type="number" class="roll-input" placeholder="d100" id="roll-${a.key}" style="width: 70px;">
+        <button class="btn small" data-table-query="${a.table}">查询</button>
+        <button class="btn small" data-table-random="${a.table}">🎲</button>
+      </div>
+      <div class="roll-result empty" id="result-${a.key}" style="margin-top: 8px; padding: 8px; font-size: 13px;"></div>
+    `;
+  }
+
+  const expandBtn = isAvailable
+    ? `<button class="activity-expand-btn" data-expand="${a.key}">▼ 展开详情</button>`
+    : `<span style="font-size: 12px; color: var(--crimson); white-space: nowrap;">⚠ 未解锁</span>`;
+
+  return `
+    <div class="activity-card ${isAvailable ? '' : 'unavailable'}" data-activity-key="${a.key}">
+      <div class="activity-head">
+        <div class="activity-head-text">
+          <div class="activity-name">${a.name} <span style="font-style: italic; font-size: 12px; color: var(--ink-soft);">${a.en}</span></div>
+          <div class="activity-meta">频率: ${a.freq}</div>
+          <div class="activity-prereq-badge ${isAvailable ? 'met' : 'unmet'}">前置: ${prereqFacility.name} (${tierName})</div>
+        </div>
+        ${expandBtn}
+      </div>
+      <div class="activity-body">
+        <div class="activity-desc">${a.desc}</div>
+        <div class="activity-detail" id="detail-${a.key}" style="display: none;">
+          <div class="activity-desc-full">${a.descFull || a.desc}</div>
+          ${tableHtml}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function toggleActivityDetail(key, btn) {
+  const detail = $(`#detail-${key}`);
+  const card = btn.closest('.activity-card');
+  if (!detail) return;
+  const isOpen = detail.style.display !== 'none';
+  if (isOpen) {
+    detail.style.display = 'none';
+    card.classList.remove('expanded');
+    btn.textContent = '▼ 展开详情';
+  } else {
+    detail.style.display = 'block';
+    card.classList.add('expanded');
+    btn.textContent = '▲ 收起';
+  }
+}
+
+function queryDowntimeTable(tableKey, val) {
+  const table = DOWNTIME_TABLES[tableKey];
+  const act = ACTIVITIES.find(a => a.table === tableKey);
+  const row = table.rows.find(r => val >= r.range[0] && val <= r.range[1]);
+  const resultEl = $(`#result-${act.key}`);
+  resultEl.classList.remove('empty');
+  resultEl.innerHTML = `
+    <div><span class="result-id">d100=${val}</span><span class="result-text">${row.text}</span></div>
+  `;
+}
+
+function renderBrewQueue() {
+  const queue = state.activities.brewQueue || [];
+  const el = $('#brew-queue');
+  if (queue.length === 0) {
+    el.innerHTML = '<div class="history-empty">尚无进行中的酿造批次</div>';
+    return;
+  }
+  el.innerHTML = queue.map((b, i) => {
+    const daysLeft = b.readyDay - state.meta.day;
+    const ready = daysLeft <= 0;
+    return `
+      <div style="padding: 12px; border: var(--border); background: var(--parchment); margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <strong>#${i + 1} ${b.type === 'distill' ? '蒸馏酒' : '酿酒'}</strong>
+          · 原料: ${b.ingredients || '常规'}
+          · 起始日 ${b.startDay}
+          · ${ready ? '<span style="color: var(--moss);">已可投骰</span>' : `还需 ${daysLeft} 天`}
+        </div>
+        <div>
+          <input type="number" class="roll-input" placeholder="d100" id="brew-roll-${i}" style="width: 70px;">
+          <button class="btn small" data-brew-roll="${i}">投骰查表</button>
+          <button class="btn small" data-brew-remove="${i}">移除</button>
+        </div>
+      </div>
+      <div class="roll-result empty" id="brew-result-${i}" style="margin-bottom: 8px;"></div>
+    `;
+  }).join('');
+
+  $$('[data-brew-roll]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const idx = parseInt(btn.dataset.brewRoll, 10);
+      const val = parseInt($(`#brew-roll-${idx}`).value, 10);
+      if (isNaN(val) || val < 1 || val > 100) {
+        toast('请输入 1-100', 'error');
+        return;
+      }
+      const b = state.activities.brewQueue[idx];
+      const tableKey = b.type === 'distill' ? 'distill' : 'brew';
+      const table = DOWNTIME_TABLES[tableKey];
+      const row = table.rows.find(r => val >= r.range[0] && val <= r.range[1]);
+      const resultEl = $(`#brew-result-${idx}`);
+      resultEl.classList.remove('empty');
+      resultEl.innerHTML = `<div><span class="result-id">d100=${val}</span><span class="result-text">${row.text}</span></div>`;
+    });
+  });
+  $$('[data-brew-remove]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const idx = parseInt(btn.dataset.brewRemove, 10);
+      if (await showConfirm('从队列移除此批次？', { title: '移除批次', danger: true, okText: '移除' })) {
+        state.activities.brewQueue.splice(idx, 1);
+        saveState();
+        renderDowntime();
+      }
+    });
+  });
+}
+
+// ============================================================================
+// 规则速查
+// ============================================================================
+
+function renderRules() {
+  renderRulesTiers();
+  renderRulesInvestments();
+  renderRulesFacilities();
+  renderRulesBizMatrix();
+  renderRulesEvents();
+  renderRulesDowntimeTables();
+}
+
+function renderRulesTiers() {
+  const html = `
+    <table class="tier-lookup-table">
+      <thead>
+        <tr><th>分数范围</th><th>等级</th><th>英文名</th><th>说明</th></tr>
+      </thead>
+      <tbody>
+        ${TIERS.map(t => `
+          <tr>
+            <td style="font-family: var(--font-mono); font-weight: 600;">
+              ${t.min === t.max ? t.min : `${t.min}–${t.max === 999 ? '∞' : t.max}`}
+            </td>
+            <td><span class="tier-cell" style="background: ${t.color};"></span>${t.name}</td>
+            <td style="font-style: italic; color: var(--ink-soft);">${t.en}</td>
+            <td style="font-size: 13px; color: var(--ink-soft);">${tierDescription(t.id)}</td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `;
+  $('#rules-tiers').innerHTML = html;
+}
+
+function tierDescription(id) {
+  const map = {
+    squalid: '酒馆一片狼藉，几乎无人光顾',
+    poor: '勉强维持，仅有零星酒客',
+    modest: '小本经营，本地居民偶尔光顾',
+    comfortable: '生意稳定，口碑渐起',
+    wealthy: '远近闻名，富商贵客慕名而来',
+    aristocratic: '深水城最负盛名的酒馆',
+  };
+  return map[id] || '';
+}
+
+function renderRulesInvestments() {
+  const rows = [
+    { name: '预防性维护', cost: 10, effect: '可能减少其他费用（蟑螂/白蚁/漏水等事件的修复账单可忽略）', ignores: 'maintenance' },
+    { name: '保险',       cost: 10, effect: '覆盖火灾、风暴、洪水、地震、沉降造成的损害',                  ignores: 'insurance' },
+    { name: '额外安保',   cost: 20, effect: '降低你和顾客的风险（斗殴/盗贼/罪犯事件可忽略）',             ignores: 'security' },
+    { name: '额外服务',   cost: 10, effect: '生意结果投掷 +10（事件类加值同步放大）',                       ignores: 'service' },
+  ];
+  const html = `
+    <table class="tier-lookup-table">
+      <thead>
+        <tr><th>投资项</th><th>费用</th><th>效果</th></tr>
+      </thead>
+      <tbody>
+        ${rows.map(r => `
+          <tr>
+            <td style="font-family: var(--font-display); font-weight: 600;">${r.name}</td>
+            <td style="font-family: var(--font-mono); color: var(--gold);">${r.cost}gp</td>
+            <td style="font-size: 13px;">${r.effect}</td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `;
+  $('#rules-investments').innerHTML = html;
+}
+
+function renderRulesFacilities() {
+  const tbody = $('#rules-facility-tbody');
+  tbody.innerHTML = FACILITIES.map(f => {
+    const prereqNames = f.prereq.map(p => {
+      const pf = FACILITIES.find(x => x.key === p);
+      return pf ? pf.name : p;
+    }).join(' / ') || '—';
+    return `
+      <tr>
+        <td><strong>${f.name}</strong><br><span style="font-style: italic; font-size: 11px; color: var(--ink-soft);">${f.en}</span></td>
+        <td style="font-size: 12px;">${prereqNames}</td>
+        <td style="font-family: var(--font-mono);">${f.price[0]}gp</td>
+        <td style="font-family: var(--font-mono);">${f.price[1]}gp</td>
+        <td style="font-family: var(--font-mono);">${f.price[2]}gp</td>
+        <td style="font-family: var(--font-mono); color: var(--gold);">+${f.bonus[0]} / +${f.bonus[1]} / +${f.bonus[2]}</td>
+        <td style="font-size: 12px;">${f.activity || '—'}</td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function renderRulesBizMatrix() {
+  const tiers = TIERS;
+  const html = `
+    <table class="biz-matrix">
+      <thead>
+        <tr>
+          <th>d100 范围</th>
+          ${tiers.map(t => `<th>${t.name}<br><span style="font-size:10px; font-style: italic;">${t.en}</span></th>`).join('')}
+        </tr>
+      </thead>
+      <tbody>
+        ${BUSINESS_TABLE.map(row => {
+          const rangeLabel = row.range[1] === 999 ? `${row.range[0]}+` : `${row.range[0]}–${row.range[1]}`;
+          const cellClass = row.type === 'profit' ? 'cell-profit' : row.type === 'loss' ? 'cell-loss' : 'cell-even';
+          const typeLabel = row.type === 'profit' ? '盈利' : row.type === 'loss' ? '亏损' : '收支平衡';
+          return `
+            <tr>
+              <td class="range-cell">${rangeLabel}<br><span style="font-size: 10px; font-weight: normal; color: var(--ink-soft);">${typeLabel}</span></td>
+              ${row.exprs.map(expr => {
+                if (!expr) return `<td class="${cellClass}">—</td>`;
+                const display = expr.replace(/\*/g, '×');
+                return `<td class="${cellClass}">${display}</td>`;
+              }).join('')}
+            </tr>
+          `;
+        }).join('')}
+      </tbody>
+    </table>
+  `;
+  $('#rules-biz-matrix').innerHTML = html;
+}
+
+function renderRulesEvents(filterText) {
+  const filter = (filterText || '').trim().toLowerCase();
+  const filtered = filter
+    ? EVENTS.filter(e => e.text.toLowerCase().includes(filter) || String(e.id) === filter)
+    : EVENTS;
+
+  $('#rules-event-count').textContent = `共 ${filtered.length} 条${filter ? `（过滤自 ${EVENTS.length} 条）` : ''}`;
+
+  if (filtered.length === 0) {
+    $('#rules-event-list').innerHTML = '<div style="padding: 24px; text-align: center; color: var(--ink-soft);">未找到匹配的事件</div>';
+    return;
+  }
+
+  $('#rules-event-list').innerHTML = filtered.map(e => {
+    const tagsHtml = (e.tags || []).map(t => {
+      const labelMap = { bonus: '加值', penalty: '减值', cost: '费用', gain: '收益', flag: '永久', special: '特殊' };
+      const label = labelMap[t.kind] || t.kind;
+      return `<span class="rules-event-tag tag-${t.kind}">${label} ${t.val}</span>`;
+    }).join(' ');
+    return `
+      <div class="rules-event-item">
+        <span class="rules-event-id">#${String(e.id).padStart(2, '0')}</span>
+        <div class="rules-event-text">
+          ${e.text}
+          <div style="margin-top: 4px;">${tagsHtml}</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderRulesDowntimeTables() {
+  const html = Object.keys(DOWNTIME_TABLES).map(key => {
+    const t = DOWNTIME_TABLES[key];
+    const rows = t.rows.map(r => `
+      <div class="rules-downtime-row">
+        <span class="rules-downtime-range">${r.range[0]}–${r.range[1] === 100 ? '00' : r.range[1]}</span>
+        <span>${r.text}</span>
+      </div>
+    `).join('');
+    return `
+      <details class="rules-downtime-table">
+        <summary>${t.title}</summary>
+        <div class="rules-downtime-rows">${rows}</div>
+      </details>
+    `;
+  }).join('');
+  $('#rules-downtime-tables').innerHTML = html;
+}
+
+// ============================================================================
+// 事件处理
+// ============================================================================
+
+function switchTab(name) {
+  $$('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
+  $$('.panel').forEach(p => p.classList.toggle('active', p.id === 'tab-' + name));
+}
+
+async function queryEvent() {
+  const val = parseInt($('#event-roll').value, 10);
+  if (isNaN(val) || val < 1 || val > 100) {
+    toast('请输入 1-100 之间的骰值', 'error');
+    return;
+  }
+  const event = EVENTS.find(e => e.id === val);
+  if (!event) {
+    toast('未找到事件', 'error');
+    return;
+  }
+  const el = $('#event-result');
+  el.classList.remove('empty');
+
+  // 退还上次本事件的应用（用户可能重投改 d100）
+  if (state.lastEvent.cost > 0) state.meta.gold += state.lastEvent.cost;
+  if (state.lastEvent.delta !== 0) state.tempBonus -= state.lastEvent.delta;
+  state.lastEvent = { cost: 0, delta: 0 };
+
+  // 自动应用效果
+  const applied = [];      // 已应用列表 {kind, ...}
+  const ignoredList = [];  // 已抵消列表
+  let totalDelta = 0;
+  let totalCost = 0;
+
+  for (const tag of event.tags) {
+    // 检查 ignore 投资是否已购
+    const hasIgnore = tag.ignore && tag.ignore.split('/').some(k => state.investments[k]);
+    if (hasIgnore) {
+      const invNames = tag.ignore.split('/').map(k => {
+        const inv = INVESTMENTS.find(x => x.key === k);
+        return inv ? inv.name : k;
+      });
+      ignoredList.push({ val: tag.val, names: invNames });
+      continue;
+    }
+
+    if (tag.kind === 'bonus' || tag.kind === 'penalty' || tag.kind === 'gain') {
+      const m = String(tag.val).match(/(-?\d+)\s*\/\s*(-?\d+)/);
+      let delta = 0;
+      let variant = '';
+      if (m) {
+        const v1 = parseInt(m[1], 10);
+        const v2 = parseInt(m[2], 10);
+        const hasService = state.investments.service;
+        const useV2 = await showChoice(
+          `此事件有变体加值：\n• ${v1 >= 0 ? '+' : ''}${v1}（无额外服务）\n• ${v2 >= 0 ? '+' : ''}${v2}（有额外服务，需已购买）\n\n选择本次采用的加值${hasService ? '（已检测到你购买了额外服务）' : ''}：`,
+          {
+            title: '变体加值',
+            primaryText: `采用 ${v2 >= 0 ? '+' : ''}${v2}（有服务）`,
+            secondaryText: `采用 ${v1 >= 0 ? '+' : ''}${v1}（无服务）`,
+            primaryValue: true,
+            secondaryValue: false,
+          }
+        );
+        delta = useV2 ? v2 : v1;
+        variant = `${v1 >= 0 ? '+' : ''}${v1}/${v2 >= 0 ? '+' : ''}${v2} → ${delta >= 0 ? '+' : ''}${delta}`;
+      } else {
+        const m2 = String(tag.val).match(/-?\d+/);
+        if (m2) delta = parseInt(m2[0], 10);
+      }
+      if (delta !== 0) {
+        state.tempBonus += delta;
+        totalDelta += delta;
+        applied.push({ kind: 'bonus', delta, variant });
+      }
+    } else if (tag.kind === 'cost') {
+      const expr = String(tag.val).replace(/×/g, '*');
+      const result = evalDiceExpr(expr);
+      let amount = result.total;
+
+      // 烧烤季 + 未购保险 → 火灾类事件损失翻倍（PDF p.12 barbecue 规则）
+      const FIRE_EVENTS = [12, 30, 31, 38, 49, 75, 90];
+      const isFire = FIRE_EVENTS.includes(event.id);
+      const bbqActive = state.cycleActivity && state.cycleActivity.key === 'barbecue';
+      const noInsurance = !state.investments.insurance;
+      const doubled = isFire && bbqActive && noInsurance;
+      if (doubled) amount *= 2;
+
+      state.meta.gold -= amount;
+      totalCost += amount;
+      applied.push({
+        kind: 'cost',
+        amount,
+        breakdown: result.breakdown + (doubled ? ' ×2' : ''),
+        expr: tag.val,
+        note: doubled ? '烧烤季期间未购保险，损失 ×2' : '',
+      });
+    }
+    // flag/special 不自动应用，保留按钮
+  }
+
+  saveState();
+
+  // 记录本次应用，供重投时退还
+  state.lastEvent = { cost: totalCost, delta: totalDelta };
+
+  // 渲染
+  const tagsHtml = event.tags.map(t => {
+    let cls = 'tag';
+    if (t.kind === 'bonus') cls = 'tag bonus';
+    else if (t.kind === 'penalty') cls = 'tag penalty';
+    else if (t.kind === 'cost') cls = 'tag special';
+    else if (t.kind === 'gain') cls = 'tag bonus';
+    else if (t.kind === 'flag') cls = 'tag special';
+    else if (t.kind === 'special') cls = 'tag special';
+    return `<span class="${cls}">${t.val}</span>`;
+  }).join(' ');
+
+  const appliedHtml = applied.length === 0 && ignoredList.length === 0
+    ? '<div style="color: var(--ink-soft); font-size: 13px;">此事件无自动应用效果（仅 flag/special 类，见下方按钮）</div>'
+    : [
+        ...applied.map(a => {
+          if (a.kind === 'bonus') {
+            return `<div><span style="color: var(--moss); font-weight: 600;">✓ 加值 ${a.delta >= 0 ? '+' : ''}${a.delta}</span>${a.variant ? ` <span style="font-size: 12px; color: var(--ink-faint);">(${a.variant})</span>` : ''}</div>`;
+          }
+          if (a.kind === 'cost') {
+            return `<div><span style="color: var(--crimson); font-weight: 600;">✓ 扣金币 -${a.amount}gp</span> <span style="font-size: 12px; color: var(--ink-faint);">(${a.expr} = ${a.breakdown})</span>${a.note ? `<br><span style="font-size: 11px; color: var(--crimson); margin-left: 12px;">${a.note}</span>` : ''}</div>`;
+          }
+          return '';
+        }),
+        ...ignoredList.map(ig => `<div><span style="color: var(--gold); font-weight: 600;">✗ 已抵消</span> <span style="font-size: 12px; color: var(--ink-faint);">(${ig.names.join('或')}已购，忽略"${ig.val}")</span></div>`),
+      ].join('');
+
+  const flagTags = event.tags.filter(t => t.kind === 'flag' || t.kind === 'special');
+  const flagBtnsHtml = flagTags.length === 0 ? '' : `
+    <div style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--ink-faint);">
+      <div style="font-size: 12px; color: var(--ink-soft); margin-bottom: 6px;">永久/特殊效果（DM 判断后手动添加）：</div>
+      ${flagTags.map(t => `<button class="btn small" onclick="addFlagFromEvent(${event.id})" style="margin-right: 6px; margin-bottom: 4px;">添加：${t.val}</button>`).join('')}
+    </div>
+  `;
+
+  el.innerHTML = `
+    <div><span class="result-id">#${event.id}</span><span class="result-text">${event.text}</span></div>
+    <div class="result-meta">
+      <div style="margin-bottom: 6px;"><strong>效果标签：</strong>${tagsHtml}</div>
+      <div style="margin-top: 10px; padding: 8px 10px; background: var(--parchment-dark); border: 1px dotted var(--ink-faint);">
+        <div style="font-weight: 600; margin-bottom: 6px;">本次应用：</div>
+        ${appliedHtml}
+        ${(totalDelta !== 0 || totalCost !== 0) ? `
+          <div style="margin-top: 8px; padding-top: 6px; border-top: 1px dashed var(--ink-faint); font-size: 13px;">
+            ${totalDelta !== 0 ? `临时加值累计：<strong style="color: ${totalDelta >= 0 ? 'var(--moss)' : 'var(--crimson)'};">${totalDelta >= 0 ? '+' : ''}${totalDelta}</strong>` : ''}
+            ${totalDelta !== 0 && totalCost !== 0 ? ' · ' : ''}
+            ${totalCost !== 0 ? `钱袋变动：<strong style="color: var(--crimson);">-${totalCost}gp</strong>` : ''}
+          </div>
+        ` : ''}
+      </div>
+      ${flagBtnsHtml}
+    </div>
+  `;
+
+  if (totalDelta !== 0) toast(`已应用 ${totalDelta >= 0 ? '+' : ''}${totalDelta} 临时加值`, 'success');
+  if (totalCost !== 0) toast(`已扣 ${totalCost}gp 修理费`, 'info');
+  renderAll();
+}
+
+function queryBusiness() {
+  const total = calcTotalScore();
+  const tier = getTierByScore(total);
+  const tierIdx = TIERS.findIndex(t => t.id === tier.id);
+
+  // 收集加值明细：永久加值按 flag 拆分（含删除按钮），临时加值聚合
+  const bonusDetail = [];
+  Object.entries(state.flags).forEach(([key, flag]) => {
+    const amount = flag.kind === 'buff' ? flag.amount : -flag.amount;
+    bonusDetail.push({
+      label: flag.name,
+      amount,
+      removable: flag.removable,
+      flagKey: key,
+    });
+  });
+  if (state.tempBonus !== 0) {
+    bonusDetail.push({ label: '事件临时加值', amount: state.tempBonus });
+  }
+
+  // 活动加值 + 花费 + 账单
+  let activityCost = 0;
+  let activityBill = 0;
+  let activityBillReason = '';
+  let activityLabel = '';
+  let activityNote = '';
+  if (state.cycleActivity) {
+    const a = ACTIVITIES.find(x => x.key === state.cycleActivity.key);
+    if (a) {
+      const eff = executeActivityEffect(a.key, state.cycleActivity.days, { preview: false });
+      if (eff.bonus !== 0) {
+        const rollNote = eff.rolls.length > 0 ? `骰: ${eff.rolls.join('+')}=${eff.rolls.reduce((s, r) => s + r, 0)}` : '';
+        bonusDetail.push({
+          label: `${a.name}（${state.cycleActivity.days}天）`,
+          amount: eff.bonus,
+          note: rollNote,
+        });
+      }
+      activityCost = eff.cost;
+      activityBill = eff.bill;
+      activityBillReason = eff.billReason;
+      activityLabel = a.name;
+      activityNote = eff.followUp || '';
+    }
+  }
+
+  // 投资：额外服务 +10（PDF 明确）
+  if (state.investments.service) {
+    bonusDetail.push({ label: '额外服务投资', amount: 10 });
+  }
+
+  const finalBonus = bonusDetail.reduce((s, d) => s + d.amount, 0);
+
+  let val = parseInt($('#business-roll').value, 10);
+  if (isNaN(val) || val < 1) {
+    toast('请输入有效骰值', 'error');
+    return;
+  }
+  const originalVal = val;
+  val += finalBonus;
+  if (val < 1) val = 1;
+
+  const row = BUSINESS_TABLE.find(r => val >= r.range[0] && val <= r.range[1]);
+  if (!row) {
+    toast('未找到匹配的生意结果', 'error');
+    return;
+  }
+
+  const el = $('#business-result');
+  el.style.display = 'block';
+
+  let typeText = '', amountText = '', amount = 0, diceBreakdown = '';
+  if (row.type === 'break_even') {
+    typeText = '收支平衡';
+    amountText = '0gp';
+  } else {
+    const expr = row.exprs[tierIdx];
+    const result = evalDiceExpr(expr);
+    amount = result.total;
+    diceBreakdown = result.breakdown;
+    if (row.type === 'loss') {
+      typeText = '亏损';
+      amountText = `-${amount}gp (${expr} = ${result.breakdown})`;
+    } else {
+      typeText = '盈利';
+      amountText = `+${amount}gp (${expr} = ${result.breakdown})`;
+    }
+  }
+
+  const goldDelta = row.type === 'break_even' ? 0 : (row.type === 'loss' ? -amount : amount);
+  const totalDeduction = activityCost + activityBill;
+  const projectedGold = state.meta.gold + goldDelta - totalDeduction;
+
+  const bonusDetailHtml = bonusDetail.length === 0
+    ? '<div style="color: var(--ink-soft); font-size: 12px;">（无加值）</div>'
+    : bonusDetail.map(d => `
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; padding: 3px 0; gap: 12px;">
+          <span style="flex: 1;">${d.label}${d.note ? `<br><span style="font-size: 11px; color: var(--ink-faint);">${d.note}</span>` : ''}</span>
+          <span style="display: flex; align-items: center; gap: 6px;">
+            <span style="color: ${d.amount >= 0 ? 'var(--moss)' : 'var(--crimson)'}; font-weight: 600; white-space: nowrap;">${d.amount >= 0 ? '+' : ''}${d.amount}</span>
+            ${d.removable ? `<button class="btn small" onclick="removeFlag('${d.flagKey}')" style="padding: 0 6px; font-size: 11px;" title="移除永久加值">删除</button>` : ''}
+          </span>
+        </div>
+      `).join('');
+
+  const deductionHtml = totalDeduction > 0 ? `
+    <div style="display: flex; justify-content: space-between; padding: 3px 0; border-top: 1px dashed var(--ink-faint); margin-top: 4px;">
+      <span>${activityLabel ? `${activityLabel} 扣费` : '活动扣费'}${activityBill > 0 ? `（含账单 ${activityBill}gp：${activityBillReason}）` : ''}</span>
+      <span style="color: var(--crimson); font-weight: 600;">-${totalDeduction}gp</span>
+    </div>
+  ` : '';
+
+  el.innerHTML = `
+    <div class="biz-result-type ${row.type}">${typeText}</div>
+    <div class="biz-result-amount ${row.type}">${amountText}</div>
+    <div style="margin-top: 12px; padding: 10px 12px; background: var(--parchment-dark); border: 1px dotted var(--ink-faint); font-size: 13px;">
+      <div style="display: flex; justify-content: space-between; padding: 3px 0; font-weight: 600;">
+        <span>原始骰值（d100）</span>
+        <span>${originalVal}</span>
+      </div>
+      <div style="margin: 4px 0; font-size: 12px; color: var(--ink-soft); border-top: 1px dashed var(--ink-faint); padding-top: 6px;">加值明细：</div>
+      ${bonusDetailHtml}
+      <div style="display: flex; justify-content: space-between; padding: 4px 0; font-weight: 600; border-top: 1px solid var(--ink-faint); margin-top: 4px;">
+        <span>合计加值</span>
+        <span style="color: ${finalBonus >= 0 ? 'var(--moss)' : 'var(--crimson)'};">${finalBonus >= 0 ? '+' : ''}${finalBonus}</span>
+      </div>
+      <div style="display: flex; justify-content: space-between; padding: 3px 0; font-weight: 600;">
+        <span>查表值</span>
+        <span>${originalVal} ${finalBonus >= 0 ? '+' : ''} ${Math.abs(finalBonus)} = <strong>${val}</strong></span>
+      </div>
+      <div style="display: flex; justify-content: space-between; padding: 3px 0; border-top: 1px dashed var(--ink-faint); margin-top: 4px;">
+        <span>落入档位（${tier.name}）</span>
+        <span>${typeText}${row.type !== 'break_even' ? ` · ${row.exprs[tierIdx]}` : ''}</span>
+      </div>
+      ${deductionHtml}
+      <div style="display: flex; justify-content: space-between; padding: 4px 0; border-top: 1px solid var(--ink-faint); margin-top: 4px; font-weight: 600;">
+        <span>钱袋变动（结算后）</span>
+        <span>${state.meta.gold}gp → <strong style="color: ${projectedGold >= state.meta.gold ? 'var(--moss)' : 'var(--crimson)'};">${projectedGold}gp</strong></span>
+      </div>
+      ${activityNote ? `<div style="margin-top: 6px; font-size: 11px; color: var(--gold);">⚠ ${activityNote}</div>` : ''}
+    </div>
+    <div style="margin-top: 12px; font-size: 12px; color: var(--ink-soft);">结算时将自动应用钱袋变动（含活动费用/账单）</div>
+  `;
+
+  // 暂存当前结果供结算使用
+  el.dataset.amount = goldDelta;
+  el.dataset.type = row.type;
+  el.dataset.expr = amountText;
+  el.dataset.originalVal = originalVal;
+  el.dataset.finalVal = val;
+  el.dataset.bonusDetail = JSON.stringify(bonusDetail);
+  el.dataset.activityCost = activityCost;
+  el.dataset.activityBill = activityBill;
+  el.dataset.activityBillReason = activityBillReason;
+  el.dataset.diceBreakdown = diceBreakdown;
+  el.dataset.activityLabel = activityLabel;
+  el.dataset.activityNote = activityNote;
+}
+
+function settleCycle() {
+  const bizEl = $('#business-result');
+  if (bizEl.style.display === 'none') {
+    toast('请先查询生意结果', 'error');
+    return;
+  }
+  const goldDelta = parseInt(bizEl.dataset.amount, 10);
+  const bizType = bizEl.dataset.type;
+  const bizExpr = bizEl.dataset.expr;
+  const originalVal = parseInt(bizEl.dataset.originalVal, 10);
+  const finalVal = parseInt(bizEl.dataset.finalVal, 10);
+  const activityCost = parseInt(bizEl.dataset.activityCost, 10) || 0;
+  const activityBill = parseInt(bizEl.dataset.activityBill, 10) || 0;
+  const activityBillReason = bizEl.dataset.activityBillReason || '';
+  const diceBreakdown = bizEl.dataset.diceBreakdown || '';
+  const activityLabel = bizEl.dataset.activityLabel || '';
+  const activityNote = bizEl.dataset.activityNote || '';
+
+  const eventVal = parseInt($('#event-roll').value, 10);
+  const eventObj = (eventVal >= 1 && eventVal <= 100) ? EVENTS.find(e => e.id === eventVal) : null;
+
+  // 小妖精首次亏损自动失效（PDF 规则：小妖精/小精灵 首次亏损后离开）
+  const autoRemovedFlags = [];
+  if (bizType === 'loss') {
+    const conditionalFlags = Object.entries(state.flags).filter(([k, f]) =>
+      f && f.name && (f.name.includes('小妖精') || f.name.includes('小精灵'))
+    );
+    for (const [k, f] of conditionalFlags) {
+      delete state.flags[k];
+      autoRemovedFlags.push(f.name);
+      toast(`首次亏损触发了"${f.name}"的条件失效规则，已自动移除`, 'info');
+    }
+  }
+
+  // 应用钱袋变动（生意结果 + 活动费用 + 账单）
+  state.meta.gold += goldDelta;
+  state.meta.gold -= activityCost;
+  state.meta.gold -= activityBill;
+  if (state.meta.gold < 0) {
+    toast(`警告：钱袋为负数（${state.meta.gold}gp）。规则要求亏损需自掏腰包；不付则下次生意 -亏损数。`, 'error');
+  }
+
+  // 写入历史（含完整明细，供近期卡片展开）
+  state.history.push({
+    day: state.meta.day,
+    eventRoll: eventVal || 0,
+    eventText: eventObj ? eventObj.text : '（未投事件）',
+    bizRoll: parseInt($('#business-roll').value, 10) || 0,
+    bizResult: `${bizType === 'loss' ? '亏损' : bizType === 'profit' ? '盈利' : '收支平衡'} ${bizExpr}`,
+    goldDelta,
+    activityCost,
+    activityBill,
+    activityBillReason,
+    activityLabel,
+    activityNote,
+    originalVal,
+    finalVal,
+    bonusDetail: JSON.parse(bizEl.dataset.bonusDetail || '[]'),
+    diceBreakdown,
+    investments: { ...state.investments },
+    activityKey: state.cycleActivity ? state.cycleActivity.key : null,
+    activityDays: state.cycleActivity ? state.cycleActivity.days : 0,
+    autoRemovedFlags,
+  });
+
+  // 重置临时加值、投资、活动、日数 +10
+  state.tempBonus = 0;
+  state.investments = { maintenance: false, insurance: false, security: false, service: false };
+  state.cycleActivity = null;
+  state.lastEvent = { cost: 0, delta: 0 };
+  state.meta.day += 10;
+  state.lastSettleTime = new Date().toISOString();
+
+  saveState(true);
+  renderAll();
+
+  // 清空输入与结果区
+  $('#event-roll').value = '';
+  $('#business-roll').value = '';
+  $('#event-result').classList.add('empty');
+  $('#event-result').innerHTML = '';
+  $('#business-result').style.display = 'none';
+
+  const totalChange = goldDelta - activityCost - activityBill;
+  toast(`结算完成，钱袋变动 ${totalChange >= 0 ? '+' : ''}${totalChange}gp`, totalChange >= 0 ? 'success' : 'info');
+}
+
+function removeFlag(key) {
+  showConfirm(`移除永久效果"${state.flags[key].name}"？`, { title: '移除永久效果', danger: true, okText: '移除' }).then(ok => {
+    if (ok) {
+      delete state.flags[key];
+      saveState();
+      renderAll();
+    }
+  });
+}
+
+async function addFlagFromEvent(eventId) {
+  // 用于将事件作为永久 buff 添加
+  const event = EVENTS.find(e => e.id === eventId);
+  if (!event) return;
+  // 弹出表单
+  const name = await showPrompt('为这个永久效果命名：', event.tags[0]?.val || event.text.substring(0, 20), { title: '永久效果名称' });
+  if (!name) return;
+  const amountStr = await showPrompt('输入数值（正数=加值，负数=减值）：', '-10', { title: '效果数值' });
+  if (amountStr === null) return;
+  const amount = parseInt(amountStr, 10);
+  if (isNaN(amount)) { toast('数值无效', 'error'); return; }
+  const kind = amount >= 0 ? 'buff' : 'debuff';
+  const key = 'evt_' + eventId + '_' + Date.now();
+  state.flags[key] = { name, amount: Math.abs(amount), kind, removable: true };
+  saveState();
+  renderAll();
+  toast('已添加永久效果', 'success');
+}
+
+function exportJSON() {
+  const data = JSON.stringify(state, null, 2);
+  const safeName = (state.meta.tavernName || 'tavern').replace(/[^\w一-龥]/g, '_');
+  const filename = `${safeName}_day${state.meta.day}.json`;
+  try {
+    const blob = new Blob([data], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    toast('已导出存档', 'success');
+  } catch (e) {
+    console.warn('下载失败，回退到 textarea 复制模式:', e);
+    showExportModal(data, filename);
+  }
+}
+
+function showExportModal(data, filename) {
+  const dialog = document.createElement('div');
+  dialog.className = 'modal-dialog';
+  dialog.innerHTML = `
+    <div class="modal-title"><span class="modal-title-icon">📥</span>导出存档（受限环境）</div>
+    <div class="modal-message">当前环境（如 Notion 内嵌）不支持直接下载文件。请手动复制下方 JSON 文本，保存为 <strong>${escapeHtml(filename)}</strong>：</div>
+    <textarea class="modal-textarea" data-modal-input readonly></textarea>
+    <div class="modal-hint">提示：点击文本框会全选，Ctrl+C 复制</div>
+    <div class="modal-actions">
+      <button class="btn" data-modal-copy>复制到剪贴板</button>
+      <button class="btn primary" data-modal-ok>关闭</button>
+    </div>
+  `;
+  showModal(dialog, {
+    onMount: ({ close }) => {
+      const ta = dialog.querySelector('[data-modal-input]');
+      ta.value = data;
+      ta.addEventListener('click', () => ta.select());
+      const copyBtn = dialog.querySelector('[data-modal-copy]');
+      const okBtn = dialog.querySelector('[data-modal-ok]');
+      copyBtn.addEventListener('click', async () => {
+        try {
+          await navigator.clipboard.writeText(data);
+          toast('已复制到剪贴板', 'success');
+        } catch (err) {
+          ta.select();
+          try {
+            document.execCommand('copy');
+            toast('已复制（兼容模式）', 'success');
+          } catch (e2) {
+            toast('复制失败，请手动 Ctrl+C', 'error');
+          }
+        }
+      });
+      okBtn.addEventListener('click', () => close(true));
+    },
+  });
+}
+
+function importJSON(file) {
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!data.meta || !data.facilities) {
+        throw new Error('文件格式不正确');
+      }
+      if (!await showConfirm('导入将覆盖当前存档，确定？', { title: '导入存档', danger: true, okText: '覆盖导入' })) return;
+      applyImportedState(data);
+      toast('导入成功', 'success');
+    } catch (err) {
+      toast('导入失败：' + err.message, 'error');
+    }
+  };
+  reader.readAsText(file);
+}
+
+function applyImportedState(data) {
+  state = {
+    ...defaultState(),
+    ...data,
+    meta: { ...defaultState().meta, ...data.meta },
+    facilities: { ...defaultState().facilities, ...data.facilities },
+    investments: { ...defaultState().investments, ...data.investments },
+    flags: data.flags || {},
+    activities: { ...defaultState().activities, ...data.activities },
+  };
+  saveState(true);
+  renderAll();
+}
+
+async function importJSONFromText(text) {
+  try {
+    const data = JSON.parse(text);
+    if (!data.meta || !data.facilities) {
+      throw new Error('JSON 格式不正确：缺少 meta 或 facilities 字段');
+    }
+    if (!await showConfirm('从粘贴内容导入将覆盖当前存档，确定？', { title: '粘贴导入', danger: true, okText: '覆盖导入' })) return;
+    applyImportedState(data);
+    toast('粘贴导入成功', 'success');
+  } catch (err) {
+    toast('粘贴导入失败：' + err.message, 'error');
+  }
+}
+
+async function resetAll() {
+  if (!await showConfirm('确定要重置所有数据？此操作无法撤销（建议先导出备份）', { title: '重置', danger: true, okText: '继续' })) return;
+  if (!await showConfirm('再次确认：所有设施、历史、加值将清除', { title: '最终确认', danger: true, okText: '确认重置' })) return;
+  state = defaultState();
+  try { localStorage.removeItem(STORAGE_KEY); } catch (e) { /* iframe 受限 */ }
+  lastSaveTime = null;
+  renderAll();
+  toast('已重置', 'success');
+}
+
+// ============================================================================
+// 初始化
+// ============================================================================
+
+function init() {
+  // Tab 切换
+  $$('.tab-btn').forEach(b => b.addEventListener('click', () => switchTab(b.dataset.tab)));
+
+  // 顶部输入
+  $('#tavern-name').addEventListener('change', (e) => { state.meta.tavernName = e.target.value; saveState(); });
+  $('#current-day').addEventListener('change', (e) => { state.meta.day = parseInt(e.target.value, 10) || 1; saveState(); renderAll(); });
+  $('#current-gold').addEventListener('change', (e) => { state.meta.gold = parseInt(e.target.value, 10) || 0; saveState(); renderAll(); });
+
+  // 规则页事件搜索
+  const searchInput = $('#rules-event-search');
+  if (searchInput) {
+    searchInput.addEventListener('input', (e) => { renderRulesEvents(e.target.value); });
+  }
+
+  // 设施快捷
+  $('#load-trollskull').addEventListener('click', async () => {
+    if (await showConfirm('载入巨魔颅骨预设将覆盖现有设施，确定？', { title: '载入预设', danger: true, okText: '载入' })) {
+      state.facilities = trollskullPreset();
+      saveState();
+      renderAll();
+      toast('已载入巨魔颅骨预设', 'success');
+    }
+  });
+  $('#clear-facilities').addEventListener('click', async () => {
+    if (await showConfirm('清空所有设施？', { title: '清空设施', danger: true, okText: '清空' })) {
+      for (const k in state.facilities) state.facilities[k] = 0;
+      saveState();
+      renderAll();
+    }
+  });
+
+  // 经营
+  $('#event-query').addEventListener('click', queryEvent);
+  $('#event-random').addEventListener('click', () => {
+    const v = rollDie(100);
+    $('#event-roll').value = v;
+    queryEvent();
+  });
+  $('#business-query').addEventListener('click', queryBusiness);
+  $('#business-random').addEventListener('click', () => {
+    const v = rollDie(100);
+    $('#business-roll').value = v;
+    queryBusiness();
+  });
+  $('#settle-cycle').addEventListener('click', settleCycle);
+
+  // 工具栏
+  $('#btn-save').addEventListener('click', () => { saveState(true); toast('已保存', 'success'); });
+  $('#btn-export').addEventListener('click', exportJSON);
+  $('#btn-import').addEventListener('click', () => $('#file-input').click());
+  $('#file-input').addEventListener('change', (e) => {
+    if (e.target.files[0]) importJSON(e.target.files[0]);
+    e.target.value = '';
+  });
+  $('#btn-paste-import').addEventListener('click', async () => {
+    const text = await showPrompt(
+      '将之前导出的 JSON 全部粘贴到下方文本框：',
+      '',
+      {
+        title: '粘贴 JSON 导入',
+        okText: '解析并导入',
+        multiline: true,
+        placeholder: '{\n  "meta": { ... },\n  "facilities": { ... },\n  ...\n}',
+      }
+    );
+    if (text === null) return;
+    if (!text.trim()) { toast('请先粘贴 JSON 内容', 'error'); return; }
+    importJSONFromText(text);
+  });
+  $('#btn-reset').addEventListener('click', resetAll);
+
+  // 暴露给 inline onclick
+  window.removeFlag = removeFlag;
+
+  renderAll();
+  updateSaveStatus();
+  setInterval(updateSaveStatus, 30000);
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>

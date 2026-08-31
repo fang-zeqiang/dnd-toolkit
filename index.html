@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>DND Toolkit · 冒险者工具箱</title>
+  <style>
+    :root {
+      --ink: #0d0c0b;
+      --panel: #171411;
+      --panel-raised: #211c17;
+      --parchment: #eee3c7;
+      --muted: #a99b7d;
+      --gold: #c9a45c;
+      --gold-bright: #f0cf83;
+      --ember: #9f4b2f;
+      --line: rgba(201, 164, 92, 0.28);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      min-height: 100vh;
+      margin: 0;
+      color: var(--parchment);
+      background:
+        radial-gradient(circle at 50% -20%, rgba(159, 75, 47, 0.18), transparent 42rem),
+        linear-gradient(135deg, #0a0908, var(--ink));
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0.2;
+      background-image: repeating-linear-gradient(115deg, transparent 0 17px, rgba(255,255,255,.018) 18px);
+    }
+
+    main {
+      width: min(70rem, calc(100% - 2rem));
+      margin-inline: auto;
+      padding: clamp(3rem, 8vw, 7rem) 0;
+    }
+
+    header {
+      display: grid;
+      justify-items: center;
+      text-align: center;
+      margin-bottom: clamp(2.5rem, 6vw, 4.5rem);
+    }
+
+    .sigil {
+      display: grid;
+      width: 3.75rem;
+      aspect-ratio: 1;
+      place-items: center;
+      margin-bottom: 1.5rem;
+      border: 1px solid var(--gold);
+      color: var(--gold-bright);
+      font: 1.6rem Georgia, serif;
+      transform: rotate(45deg);
+      box-shadow: 0 0 0 5px var(--ink), 0 0 0 6px var(--line);
+    }
+
+    .sigil span { transform: rotate(-45deg); }
+
+    .eyebrow {
+      margin: 0 0 0.75rem;
+      color: var(--gold);
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.28em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 0;
+      font: clamp(2.4rem, 7vw, 5rem)/0.95 Georgia, "Times New Roman", serif;
+      letter-spacing: -0.04em;
+    }
+
+    header p:last-child {
+      max-width: 34rem;
+      margin: 1.25rem 0 0;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    .tools {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 1rem;
+    }
+
+    .tool {
+      position: relative;
+      display: flex;
+      min-height: 19rem;
+      flex-direction: column;
+      padding: clamp(1.5rem, 4vw, 2.25rem);
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 0.25rem;
+      color: inherit;
+      background: linear-gradient(145deg, var(--panel-raised), var(--panel));
+      text-decoration: none;
+      box-shadow: 0 1.5rem 4rem rgba(0, 0, 0, 0.2);
+      transition: border-color 160ms ease, transform 160ms ease, background-color 160ms ease;
+    }
+
+    .tool::after {
+      content: attr(data-mark);
+      position: absolute;
+      right: -0.25rem;
+      bottom: -2.6rem;
+      color: rgba(201, 164, 92, 0.06);
+      font: 10rem/1 Georgia, serif;
+    }
+
+    .tool:hover {
+      border-color: var(--gold);
+      transform: translateY(-0.25rem);
+    }
+
+    .tool:focus-visible {
+      outline: 3px solid var(--gold-bright);
+      outline-offset: 4px;
+    }
+
+    .tool-label {
+      color: var(--gold);
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+    }
+
+    h2 {
+      margin: auto 0 0.8rem;
+      font: clamp(1.8rem, 4vw, 2.6rem)/1.1 Georgia, "Times New Roman", serif;
+    }
+
+    .tool p {
+      max-width: 30rem;
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.65;
+    }
+
+    .enter {
+      margin-top: 1.5rem;
+      color: var(--gold-bright);
+      font-size: 0.82rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+    }
+
+    footer {
+      margin-top: 2rem;
+      color: #776d5a;
+      font-size: 0.75rem;
+      text-align: center;
+    }
+
+    @media (max-width: 44rem) {
+      main { padding-top: 2.5rem; }
+      .tools { grid-template-columns: 1fr; }
+      .tool { min-height: 15rem; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .tool { transition: none; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <div class="sigil" aria-hidden="true"><span>✦</span></div>
+      <p class="eyebrow">Adventurer utilities</p>
+      <h1>DND Toolkit</h1>
+      <p>为跑团桌边准备的轻量工具。选择一项工作，继续你的冒险。</p>
+    </header>
+
+    <section class="tools" aria-label="工具列表">
+      <a class="tool" href="/tavern/" data-mark="T">
+        <span class="tool-label">Trollskull Tavern</span>
+        <h2>酒馆经营工具</h2>
+        <p>管理设施、经营事件、停工活动与每轮账目，让巨魔颅骨酒馆持续运转。</p>
+        <span class="enter">进入酒馆 →</span>
+      </a>
+
+      <a class="tool" href="/map/" data-mark="G">
+        <span class="tool-label">Gridbound</span>
+        <h2>战图印制坊</h2>
+        <p>导入战图、校准网格、自动分页，并导出可直接印制的冒险地图。</p>
+        <span class="enter">展开战图 →</span>
+      </a>
+    </section>
+
+    <footer>无需账号 · 数据留在浏览器内</footer>
+  </main>
+</body>
+</html>
