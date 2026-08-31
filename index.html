@@ -11,7 +11,7 @@
       --panel: #171411;
       --panel-raised: #211c17;
       --parchment: #eee3c7;
-      --muted: #a99b7d;
+      --muted: #c2b493;
       --gold: #c9a45c;
       --gold-bright: #f0cf83;
       --ember: #9f4b2f;
@@ -57,29 +57,23 @@
       width: 3.75rem;
       aspect-ratio: 1;
       place-items: center;
-      margin-bottom: 1.5rem;
+      margin-bottom: 1.85rem;
       border: 1px solid var(--gold);
       color: var(--gold-bright);
-      font: 1.6rem Georgia, serif;
       transform: rotate(45deg);
       box-shadow: 0 0 0 5px var(--ink), 0 0 0 6px var(--line);
     }
 
-    .sigil span { transform: rotate(-45deg); }
-
-    .eyebrow {
-      margin: 0 0 0.75rem;
-      color: var(--gold);
-      font-size: 0.72rem;
-      font-weight: 700;
-      letter-spacing: 0.28em;
-      text-transform: uppercase;
+    .sigil span {
+      width: 0.7rem;
+      aspect-ratio: 1;
+      background: var(--gold-bright);
     }
 
     h1 {
       margin: 0;
       font: clamp(2.4rem, 7vw, 5rem)/0.95 Georgia, "Times New Roman", serif;
-      letter-spacing: -0.04em;
+      letter-spacing: -0.03em;
     }
 
     header p:last-child {
@@ -103,12 +97,21 @@
       padding: clamp(1.5rem, 4vw, 2.25rem);
       overflow: hidden;
       border: 1px solid var(--line);
-      border-radius: 0.25rem;
+      border-radius: 0.875rem;
       color: inherit;
       background: linear-gradient(145deg, var(--panel-raised), var(--panel));
       text-decoration: none;
-      box-shadow: 0 1.5rem 4rem rgba(0, 0, 0, 0.2);
-      transition: border-color 160ms ease, transform 160ms ease, background-color 160ms ease;
+      transition: border-color 160ms ease, transform 160ms ease, background 160ms ease;
+    }
+
+    .tool::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background: radial-gradient(circle at 100% 0, rgba(240, 207, 131, 0.09), transparent 34%);
+      opacity: 0;
+      transition: opacity 160ms ease;
     }
 
     .tool::after {
@@ -120,15 +123,22 @@
       font: 10rem/1 Georgia, serif;
     }
 
-    .tool:hover {
-      border-color: var(--gold);
-      transform: translateY(-0.25rem);
+    @media (hover: hover) {
+      .tool:hover {
+        border-color: var(--gold);
+        transform: translateY(-0.25rem);
+      }
+
+      .tool:hover::before { opacity: 1; }
     }
 
     .tool:focus-visible {
       outline: 3px solid var(--gold-bright);
       outline-offset: 4px;
     }
+
+    .tool:focus-visible::before { opacity: 1; }
+    .tool:active { transform: scale(0.99); }
 
     .tool-label {
       color: var(--gold);
@@ -153,15 +163,15 @@
     .enter {
       margin-top: 1.5rem;
       color: var(--gold-bright);
-      font-size: 0.82rem;
+      font-size: 0.875rem;
       font-weight: 700;
       letter-spacing: 0.08em;
     }
 
     footer {
       margin-top: 2rem;
-      color: #776d5a;
-      font-size: 0.75rem;
+      color: #a3977d;
+      font-size: 0.875rem;
       text-align: center;
     }
 
@@ -172,15 +182,14 @@
     }
 
     @media (prefers-reduced-motion: reduce) {
-      .tool { transition: none; }
+      .tool, .tool::before { transition: none; }
     }
   </style>
 </head>
 <body>
   <main>
     <header>
-      <div class="sigil" aria-hidden="true"><span>✦</span></div>
-      <p class="eyebrow">Adventurer utilities</p>
+      <div class="sigil" aria-hidden="true"><span></span></div>
       <h1>DND Toolkit</h1>
       <p>为跑团桌边准备的轻量工具。选择一项工作，继续你的冒险。</p>
     </header>
