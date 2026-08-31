@@ -85,7 +85,7 @@
 
     .tools {
       display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 1rem;
     }
 
@@ -175,6 +175,10 @@
       text-align: center;
     }
 
+    @media (max-width: 66rem) {
+      .tools { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
     @media (max-width: 44rem) {
       main { padding-top: 2.5rem; }
       .tools { grid-template-columns: 1fr; }
@@ -207,6 +211,13 @@
         <h2>战图印制坊</h2>
         <p>导入战图、校准网格、自动分页，并导出可直接印制的冒险地图。</p>
         <span class="enter">展开战图 →</span>
+      </a>
+
+      <a class="tool" href="/wiki/" data-mark="书">
+        <span class="tool-label">5E 不全书</span>
+        <h2>规则 Wiki</h2>
+        <p>4000 余页规则合集，目录树速查 + 全文搜索，跑团时随手翻阅。</p>
+        <span class="enter">查阅不全书 →</span>
       </a>
     </section>
 

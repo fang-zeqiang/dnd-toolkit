@@ -1,0 +1,603 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<title>5E 不全书 · Wiki</title>
+<style>
+  :root {
+    --ink: #0d0c0b;
+    --panel: #171411;
+    --panel-raised: #211c17;
+    --parchment: #eee3c7;
+    --muted: #a99b7d;
+    --gold: #c9a45c;
+    --gold-bright: #f0cf83;
+    --ember: #9f4b2f;
+    --line: rgba(201, 164, 92, 0.28);
+    --drawer-w: min(22rem, 86vw);
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    height: 100%;
+    margin: 0;
+  }
+
+  body {
+    display: flex;
+    flex-direction: column;
+    color: var(--parchment);
+    background: linear-gradient(135deg, #0a0908, var(--ink));
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    overflow: hidden;
+  }
+
+  header.top {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.6rem 0.75rem;
+    border-bottom: 1px solid var(--line);
+    background: var(--panel);
+    flex: none;
+  }
+
+  .icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    flex: none;
+    border: 1px solid var(--line);
+    border-radius: 0.3rem;
+    background: var(--panel-raised);
+    color: var(--gold-bright);
+    font-size: 1.1rem;
+    cursor: pointer;
+  }
+
+  .icon-btn:active { border-color: var(--gold); }
+
+  a.home-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    flex: none;
+    border: 1px solid var(--line);
+    border-radius: 0.3rem;
+    background: var(--panel-raised);
+    color: var(--gold-bright);
+    text-decoration: none;
+    font-size: 1.1rem;
+  }
+
+  .brand {
+    font: 1.05rem/1.2 Georgia, "Times New Roman", serif;
+    color: var(--gold-bright);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .filter-wrap {
+    flex: 1 1 auto;
+    min-width: 0;
+    position: relative;
+  }
+
+  #filterInput {
+    width: 100%;
+    height: 2.75rem;
+    padding: 0 0.9rem;
+    border: 1px solid var(--line);
+    border-radius: 0.3rem;
+    background: var(--panel-raised);
+    color: var(--parchment);
+    font-size: 1rem;
+  }
+
+  #filterInput:focus {
+    outline: none;
+    border-color: var(--gold);
+  }
+
+  .layout {
+    flex: 1 1 auto;
+    display: flex;
+    min-height: 0;
+    position: relative;
+  }
+
+  #drawer {
+    width: var(--drawer-w);
+    flex: none;
+    display: flex;
+    flex-direction: column;
+    background: var(--panel);
+    border-right: 1px solid var(--line);
+    transform: translateX(0);
+    transition: transform 180ms ease;
+    z-index: 20;
+  }
+
+  body.drawer-collapsed #drawer {
+    transform: translateX(-100%);
+  }
+
+  @media (max-width: 60rem) {
+    #drawer {
+      position: absolute;
+      inset: 0 auto 0 0;
+      box-shadow: 0.5rem 0 2rem rgba(0,0,0,0.5);
+    }
+    body.drawer-collapsed #drawer { transform: translateX(-100%); }
+  }
+
+  #tocScroll {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    padding: 0.5rem 0.25rem 2rem;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .tree, .tree ul {
+    list-style: none;
+    margin: 0;
+    padding-left: 1.1rem;
+  }
+
+  .tree { padding-left: 0.4rem; }
+
+  .tree li { margin: 0.05rem 0; }
+
+  .node-row {
+    display: flex;
+    align-items: stretch;
+    gap: 0.3rem;
+    min-height: 2.75rem;
+    border-radius: 0.25rem;
+  }
+
+  .node-row:hover, .node-row.active {
+    background: var(--panel-raised);
+  }
+
+  .twisty {
+    flex: none;
+    width: 2.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--muted);
+    cursor: pointer;
+    user-select: none;
+    font-size: 0.7rem;
+  }
+
+  .twisty.leaf { visibility: hidden; }
+
+  .node-label {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    padding: 0.4rem 0.4rem 0.4rem 0;
+    color: var(--parchment);
+    text-decoration: none;
+    font-size: 0.92rem;
+    line-height: 1.3;
+    overflow-wrap: break-word;
+    cursor: pointer;
+  }
+
+  .node-label.group { color: var(--gold); font-weight: 600; cursor: default; }
+
+  .node-row.active > .node-label { color: var(--gold-bright); font-weight: 700; }
+
+  .node-label mark, .node-row mark {
+    background: var(--gold);
+    color: #241c10;
+    border-radius: 0.15rem;
+    padding: 0 0.1rem;
+  }
+
+  li.hidden-by-filter { display: none; }
+
+  .tree-empty {
+    padding: 1rem;
+    color: var(--muted);
+    font-size: 0.85rem;
+  }
+
+  #content {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  #bookFrame {
+    flex: 1 1 auto;
+    border: 0;
+    width: 100%;
+    height: 100%;
+    background: var(--parchment);
+  }
+
+  #placeholder {
+    flex: 1 1 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--muted);
+    padding: 2rem;
+    text-align: center;
+  }
+
+  #scrim {
+    display: none;
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.45);
+    z-index: 10;
+  }
+
+  @media (max-width: 60rem) {
+    body:not(.drawer-collapsed) #scrim { display: block; }
+  }
+
+  #searchPanel {
+    display: none;
+    position: absolute;
+    inset: 0;
+    background: var(--panel);
+    z-index: 30;
+    flex-direction: column;
+    padding: 0.75rem;
+    overflow-y: auto;
+  }
+
+  #searchPanel.open { display: flex; }
+
+  #pagefindTarget { flex: 1 1 auto; }
+
+  .search-close {
+    align-self: flex-end;
+    margin-bottom: 0.5rem;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    #drawer { transition: none; }
+  }
+</style>
+</head>
+<body class="drawer-collapsed">
+  <header class="top">
+    <button class="icon-btn" id="drawerToggle" aria-label="切换目录">☰</button>
+    <a class="home-link" href="/" aria-label="返回首页">✦</a>
+    <span class="brand">5E 不全书</span>
+    <div class="filter-wrap">
+      <input id="filterInput" type="search" placeholder="过滤目录 / 词条…" autocomplete="off">
+    </div>
+    <button class="icon-btn" id="searchToggle" aria-label="全文搜索">🔍</button>
+  </header>
+
+  <div class="layout">
+    <div id="scrim"></div>
+    <nav id="drawer" aria-label="目录">
+      <div id="tocScroll">
+        <ul class="tree" id="tocTree"></ul>
+      </div>
+    </nav>
+
+    <div id="content">
+      <div id="placeholder">从左侧目录选择一个页面，或使用顶部过滤 / 搜索。</div>
+      <iframe id="bookFrame" title="正文" style="display:none;"></iframe>
+    </div>
+
+    <div id="searchPanel">
+      <button class="icon-btn search-close" id="searchClose" aria-label="关闭搜索">✕</button>
+      <div id="pagefindTarget"></div>
+    </div>
+  </div>
+
+<script src="toc.js"></script>
+<script>
+(function () {
+  var TOC = window.WIKI_TOC || { tree: [], index: [] };
+  var drawer = document.getElementById('drawer');
+  var scrim = document.getElementById('scrim');
+  var drawerToggle = document.getElementById('drawerToggle');
+  var tocTree = document.getElementById('tocTree');
+  var filterInput = document.getElementById('filterInput');
+  var frame = document.getElementById('bookFrame');
+  var placeholder = document.getElementById('placeholder');
+  var searchToggle = document.getElementById('searchToggle');
+  var searchPanel = document.getElementById('searchPanel');
+  var searchClose = document.getElementById('searchClose');
+
+  var narrow = window.matchMedia('(max-width: 60rem)');
+
+  function setDrawerOpen(open) {
+    document.body.classList.toggle('drawer-collapsed', !open);
+  }
+
+  drawerToggle.addEventListener('click', function () {
+    setDrawerOpen(document.body.classList.contains('drawer-collapsed'));
+  });
+  scrim.addEventListener('click', function () { setDrawerOpen(false); });
+
+  // default: open drawer on wide screens, collapsed on narrow
+  setDrawerOpen(!narrow.matches);
+
+  // ---- build tree DOM ----
+  var pathToRow = {};
+
+  function makeNode(node) {
+    var li = document.createElement('li');
+    var row = document.createElement('div');
+    row.className = 'node-row';
+
+    var twisty = document.createElement('span');
+    var hasChildren = node.children && node.children.length > 0;
+    twisty.className = 'twisty' + (hasChildren ? '' : ' leaf');
+    twisty.textContent = hasChildren ? '▶' : '';
+    row.appendChild(twisty);
+
+    var label = document.createElement(node.path ? 'a' : 'span');
+    label.className = 'node-label' + (node.path ? '' : ' group');
+    label.textContent = node.name || '(未命名)';
+    if (node.path) {
+      label.href = '#/' + node.path;
+      pathToRow[node.path] = row;
+    }
+    row.appendChild(label);
+    li.appendChild(row);
+
+    var childUl;
+    if (hasChildren) {
+      childUl = document.createElement('ul');
+      node.children.forEach(function (c) {
+        childUl.appendChild(makeNode(c));
+      });
+      li.appendChild(childUl);
+      var expanded = false;
+      function toggle(force) {
+        expanded = typeof force === 'boolean' ? force : !expanded;
+        childUl.style.display = expanded ? '' : 'none';
+        twisty.textContent = expanded ? '▼' : '▶';
+      }
+      toggle(false);
+      twisty.addEventListener('click', function () { toggle(); });
+      label.addEventListener('click', function () {
+        if (!node.path) toggle();
+      });
+      li._toggle = toggle;
+    }
+
+    if (node.path) {
+      label.addEventListener('click', function (e) {
+        e.preventDefault();
+        navigateTo(node.path);
+        if (narrow.matches) setDrawerOpen(false);
+      });
+    }
+
+    li._node = node;
+    li._childUl = childUl;
+    return li;
+  }
+
+  TOC.tree.forEach(function (n) { tocTree.appendChild(makeNode(n)); });
+
+  function expandToPath(path) {
+    var row = pathToRow[path];
+    if (!row) return;
+    var li = row.parentElement;
+    var chain = [];
+    var el = li;
+    while (el && el !== tocTree) {
+      if (el.tagName === 'LI') chain.push(el);
+      el = el.parentElement;
+    }
+    chain.reverse().forEach(function (ancestorLi) {
+      if (ancestorLi._toggle) ancestorLi._toggle(true);
+    });
+    document.querySelectorAll('.node-row.active').forEach(function (r) {
+      r.classList.remove('active');
+    });
+    row.classList.add('active');
+    row.scrollIntoView({ block: 'center' });
+  }
+
+  // ---- navigation / hash routing ----
+  var BOOK_BASE = 'book/';
+  var current = null;
+
+  function navigateTo(path, skipHash) {
+    if (!path) return;
+    current = path;
+    placeholder.style.display = 'none';
+    frame.style.display = '';
+    frame.src = BOOK_BASE + path;
+    expandToPath(path);
+    if (!skipHash) {
+      var target = '#/' + path;
+      if (location.hash !== target) location.hash = target;
+    }
+  }
+
+  function pathFromHash() {
+    var h = location.hash;
+    if (h.indexOf('#/') === 0) return decodeURIComponent(h.slice(2));
+    return null;
+  }
+
+  window.addEventListener('hashchange', function () {
+    var p = pathFromHash();
+    if (p && p !== current) navigateTo(p, true);
+  });
+
+  frame.addEventListener('load', function () {
+    try {
+      var loc = frame.contentWindow.location;
+      if (loc && loc.href && loc.href !== 'about:blank') {
+        var idx = loc.href.indexOf('/book/');
+        if (idx !== -1) {
+          var rel = decodeURIComponent(loc.href.slice(idx + '/book/'.length));
+          if (rel && rel !== current) {
+            current = rel;
+            var target = '#/' + rel;
+            if (location.hash !== target) history.replaceState(null, '', target);
+            expandToPath(rel);
+          }
+        }
+      }
+    } catch (e) { /* cross-origin safety net, no-op */ }
+  });
+
+  var initial = pathFromHash();
+  if (initial) navigateTo(initial, true);
+
+  // ---- filter ----
+  function normalize(s) { return (s || '').toLowerCase(); }
+
+  function filterTree(query) {
+    var q = normalize(query);
+    function walk(li) {
+      var node = li._node;
+      var selfMatch = !q || normalize(node.name).indexOf(q) !== -1;
+      var childMatch = false;
+      if (li._childUl) {
+        Array.prototype.forEach.call(li._childUl.children, function (childLi) {
+          if (walk(childLi)) childMatch = true;
+        });
+      }
+      var show = selfMatch || childMatch;
+      li.classList.toggle('hidden-by-filter', !show);
+      if (q && childMatch && li._toggle) li._toggle(true);
+      var label = li.querySelector(':scope > .node-row > .node-label');
+      if (label) {
+        label.innerHTML = '';
+        label.textContent = node.name || '(未命名)';
+        if (q && selfMatch) highlightLabel(label, node.name, q);
+      }
+      return show;
+    }
+    Array.prototype.forEach.call(tocTree.children, walk);
+  }
+
+  function highlightLabel(el, text, q) {
+    var lower = text.toLowerCase();
+    var i = lower.indexOf(q);
+    if (i === -1) return;
+    el.innerHTML = escapeHtml(text.slice(0, i)) + '<mark>' + escapeHtml(text.slice(i, i + q.length)) + '</mark>' + escapeHtml(text.slice(i + q.length));
+  }
+
+  function escapeHtml(s) {
+    return s.replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  var indexResultsEl = null;
+
+  function renderIndexResults(query) {
+    if (indexResultsEl) { indexResultsEl.remove(); indexResultsEl = null; }
+    if (!query) return;
+    var q = normalize(query);
+    var hits = TOC.index.filter(function (e) { return normalize(e.name).indexOf(q) !== -1; }).slice(0, 60);
+    if (!hits.length) return;
+    indexResultsEl = document.createElement('div');
+    indexResultsEl.style.padding = '0.5rem 0.75rem';
+    indexResultsEl.style.borderTop = '1px solid var(--line)';
+    var title = document.createElement('div');
+    title.style.color = 'var(--gold)';
+    title.style.fontSize = '0.72rem';
+    title.style.letterSpacing = '0.1em';
+    title.style.margin = '0.4rem 0';
+    title.textContent = '词条索引匹配';
+    indexResultsEl.appendChild(title);
+    hits.forEach(function (h) {
+      var a = document.createElement('a');
+      a.href = '#/' + h.path;
+      a.textContent = h.name;
+      a.style.display = 'block';
+      a.style.padding = '0.4rem 0.2rem';
+      a.style.color = 'var(--parchment)';
+      a.style.textDecoration = 'none';
+      a.style.fontSize = '0.9rem';
+      a.addEventListener('click', function (e) {
+        e.preventDefault();
+        navigateTo(h.path);
+        if (narrow.matches) setDrawerOpen(false);
+      });
+      indexResultsEl.appendChild(a);
+    });
+    document.getElementById('tocScroll').appendChild(indexResultsEl);
+  }
+
+  var filterTimer = null;
+  filterInput.addEventListener('input', function () {
+    clearTimeout(filterTimer);
+    var v = filterInput.value;
+    filterTimer = setTimeout(function () {
+      filterTree(v);
+      renderIndexResults(v);
+      if (v && narrow.matches) setDrawerOpen(true);
+    }, 80);
+  });
+
+  // ---- pagefind search panel ----
+  var pagefindLoaded = false;
+  function openSearch() {
+    searchPanel.classList.add('open');
+    if (!pagefindLoaded) {
+      pagefindLoaded = true;
+      var link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = 'pagefind/pagefind-ui.css';
+      document.head.appendChild(link);
+      var script = document.createElement('script');
+      script.src = 'pagefind/pagefind-ui.js';
+      script.onload = function () {
+        new window.PagefindUI({ element: '#pagefindTarget', showSubResults: true, showImages: false });
+      };
+      document.body.appendChild(script);
+    }
+  }
+  searchToggle.addEventListener('click', openSearch);
+  searchClose.addEventListener('click', function () {
+    searchPanel.classList.remove('open');
+  });
+
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest && e.target.closest('#pagefindTarget a[href]');
+    if (!a) return;
+    var href = a.getAttribute('href');
+    if (!href) return;
+    var path = null;
+    if (href.indexOf('/wiki/book/') === 0) {
+      path = href.slice('/wiki/book/'.length);
+    } else if (href.indexOf('/wiki/') === 0) {
+      path = href.slice('/wiki/'.length);
+    } else if (href.indexOf('/') === 0) {
+      path = href.slice(1);
+    }
+    if (path) {
+      e.preventDefault();
+      navigateTo(decodeURIComponent(path));
+      searchPanel.classList.remove('open');
+      if (narrow.matches) setDrawerOpen(false);
+    }
+  });
+})();
+</script>
+</body>
+</html>

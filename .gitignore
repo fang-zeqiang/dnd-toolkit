@@ -10,3 +10,13 @@
 !docs/superpowers/
 !docs/superpowers/specs/
 !docs/superpowers/specs/*.md
+!docs/adr/
+!docs/adr/**
+!docs/research/
+!docs/research/**
+!CONTEXT.md
+!middleware.ts
+!wiki/
+!wiki/**
+.vercel
+.env*

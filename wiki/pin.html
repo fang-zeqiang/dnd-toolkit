@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>PIN · 5E 不全书</title>
+<style>
+  :root {
+    --ink: #0d0c0b;
+    --panel: #171411;
+    --panel-raised: #211c17;
+    --parchment: #eee3c7;
+    --muted: #a99b7d;
+    --gold: #c9a45c;
+    --gold-bright: #f0cf83;
+    --line: rgba(201, 164, 92, 0.28);
+  }
+  * { box-sizing: border-box; }
+  body {
+    min-height: 100vh;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--parchment);
+    background: linear-gradient(135deg, #0a0908, var(--ink));
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  }
+  form {
+    width: min(22rem, calc(100% - 2rem));
+    padding: 2rem;
+    border: 1px solid var(--line);
+    border-radius: 0.4rem;
+    background: linear-gradient(145deg, var(--panel-raised), var(--panel));
+    text-align: center;
+  }
+  h1 {
+    margin: 0 0 1.25rem;
+    font: 1.6rem Georgia, "Times New Roman", serif;
+    color: var(--gold-bright);
+  }
+  input {
+    width: 100%;
+    height: 2.75rem;
+    margin-bottom: 1rem;
+    padding: 0 0.9rem;
+    border: 1px solid var(--line);
+    border-radius: 0.3rem;
+    background: var(--ink);
+    color: var(--parchment);
+    font-size: 1.2rem;
+    text-align: center;
+    letter-spacing: 0.3em;
+  }
+  input:focus { outline: none; border-color: var(--gold); }
+  button {
+    width: 100%;
+    height: 2.75rem;
+    border: 1px solid var(--gold);
+    border-radius: 0.3rem;
+    background: var(--gold);
+    color: var(--ink);
+    font-weight: 700;
+    font-size: 1rem;
+    cursor: pointer;
+  }
+  #err {
+    min-height: 1.2rem;
+    margin-top: 0.75rem;
+    color: #e08a6b;
+    font-size: 0.85rem;
+  }
+</style>
+</head>
+<body>
+  <form id="pinForm">
+    <h1>输入 PIN</h1>
+    <input id="pinInput" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="8" autofocus>
+    <button type="submit">进入</button>
+    <div id="err"></div>
+  </form>
+<script>
+(function () {
+  var PIN = '8888';
+  var TOKEN = 'a3f9c2e17b6d4508';
+  var params = new URLSearchParams(location.search);
+  var back = params.get('back') || '/wiki/';
+  document.getElementById('pinForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var val = document.getElementById('pinInput').value;
+    if (val === PIN) {
+      var expires = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toUTCString();
+      document.cookie = 'wiki_auth=' + TOKEN + '; expires=' + expires + '; path=/; SameSite=Lax';
+      location.href = back;
+    } else {
+      document.getElementById('err').textContent = 'PIN 错误';
+      document.getElementById('pinInput').value = '';
+      document.getElementById('pinInput').focus();
+    }
+  });
+})();
+</script>
+</body>
+</html>
