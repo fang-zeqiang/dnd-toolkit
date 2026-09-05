@@ -18,6 +18,8 @@
 !docs/research/**
 !docs/archives/
 !docs/archives/**
+!tests/
+!tests/**
 !CONTEXT.md
 !middleware.ts
 !wiki/
