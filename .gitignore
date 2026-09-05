@@ -2,6 +2,8 @@
 !.gitignore
 !README.md
 !index.html
+!archive/
+!archive/**
 !tavern/
 !tavern/index.html
 !map/
@@ -14,6 +16,8 @@
 !docs/adr/**
 !docs/research/
 !docs/research/**
+!docs/archives/
+!docs/archives/**
 !CONTEXT.md
 !middleware.ts
 !wiki/

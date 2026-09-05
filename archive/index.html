@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>游戏存档 · DND Toolkit</title>
+  <style>
+    :root { --ink:#0d0c0b; --panel:#171411; --panel-raised:#211c17; --paper:#eee3c7; --muted:#c2b493; --gold:#c9a45c; --bright:#f0cf83; --ember:#9f4b2f; --line:rgba(201,164,92,.28); }
+    * { box-sizing:border-box; } body { min-height:100vh; margin:0; color:var(--paper); background:radial-gradient(circle at 80% 0,rgba(159,75,47,.2),transparent 34rem),linear-gradient(135deg,#0a0908,var(--ink)); font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+    body::before { content:""; position:fixed; inset:0; pointer-events:none; opacity:.2; background-image:repeating-linear-gradient(115deg,transparent 0 17px,rgba(255,255,255,.018) 18px); }
+    main { position:relative; width:min(70rem,calc(100% - 2rem)); margin:auto; padding:2rem 0 5rem; } a { color:var(--bright); } .back { display:inline-flex; padding:.5rem 0; color:var(--muted); text-decoration:none; } .back:hover { color:var(--bright); }
+    .hero { display:grid; grid-template-columns:minmax(0,1.3fr) minmax(14rem,.7fr); gap:2rem; align-items:end; padding:4rem 0 3rem; border-bottom:1px solid var(--line); } .kicker { margin:0 0 .8rem; color:var(--gold); font-size:.72rem; font-weight:700; letter-spacing:.17em; text-transform:uppercase; }
+    h1,h2,h3 { font-family:Georgia,"Times New Roman",serif; } h1 { max-width:12ch; margin:0; font-size:clamp(2.7rem,7vw,5.7rem); line-height:.94; letter-spacing:-.04em; } .lead { max-width:42rem; margin:1.2rem 0 0; color:var(--muted); line-height:1.75; }
+    .session { padding:1.3rem; border:1px solid var(--line); border-radius:.9rem; background:linear-gradient(145deg,var(--panel-raised),var(--panel)); } .session strong { display:block; color:var(--bright); font-family:Georgia,serif; font-size:1.35rem; } .session p { margin:.65rem 0 0; color:var(--muted); line-height:1.65; }
+    section { margin-top:3.5rem; } h2 { margin:0 0 1rem; font-size:clamp(1.8rem,4vw,2.7rem); line-height:1.1; } .intro { max-width:47rem; color:var(--muted); line-height:1.75; }
+    .outcomes { display:grid; grid-template-columns:1.15fr .85fr; gap:1rem; } .outcome { padding:1.5rem; border:1px solid var(--line); border-radius:.9rem; background:var(--panel); } .outcome:first-child { background:linear-gradient(135deg,rgba(159,75,47,.34),var(--panel)); } .outcome h3 { margin:0 0 .55rem; color:var(--bright); font-size:1.35rem; } .outcome p { margin:0; color:var(--muted); line-height:1.7; }
+    .acts { display:grid; grid-template-columns:1.15fr .85fr; gap:1rem; } .act { min-height:13rem; padding:1.6rem; border-top:1px solid var(--gold); background:rgba(33,28,23,.82); } .act:nth-child(2),.act:nth-child(3) { margin-top:2.5rem; } .act h3 { margin:0 0 .7rem; color:var(--bright); font-size:1.55rem; } .act p { margin:0; color:var(--muted); line-height:1.7; }
+    .split { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; } .list { padding:1.5rem; border:1px solid var(--line); border-radius:.9rem; background:var(--panel); } .list h3 { margin:0 0 .75rem; font-size:1.4rem; } ul { margin:0; padding-left:1.2rem; color:var(--muted); } li { margin:.55rem 0; line-height:1.55; }
+    .more { display:inline-flex; margin-top:1.4rem; padding:.85rem 1.15rem; border-radius:.5rem; color:#17110a; background:var(--bright); font-weight:800; text-decoration:none; } .more:active { transform:scale(.98); } .more:focus-visible,.back:focus-visible { outline:3px solid var(--bright); outline-offset:4px; }
+    footer { margin-top:4rem; color:#a3977d; font-size:.875rem; }
+    @media (max-width:44rem) { main { padding-top:1rem; } .hero,.outcomes,.acts,.split { grid-template-columns:1fr; } .hero { padding-top:2.5rem; } .act:nth-child(2),.act:nth-child(3) { margin-top:0; } section { margin-top:2.6rem; } }
+    @media (prefers-reduced-motion:reduce) { * { scroll-behavior:auto; } }
+  </style>
+</head>
+<body>
+  <main>
+    <a class="back" href="/">← 返回工具箱</a>
+    <header class="hero">
+      <div><p class="kicker">Campaign Archive</p><h1>深水城冒险实录：三纳瑟余波</h1><p class="lead">第三场结束时，队伍从工会据点活着走出，拿到一间废弃酒馆，也走进了深水城更复杂的势力网络。</p></div>
+      <aside class="session"><strong>2026.08.02</strong><p>13:32 - 19:10<br>巨磨乳虎巷周边<br>游戏内推进至 3 月 3 日</p></aside>
+    </header>
+    <section><h2>这场冒险留下什么</h2><p class="intro">三纳瑟工会据点被清剿，夺心魔落败，队伍在数次濒死后全员生还。瓦罗的房产完成公证，幽灵丽芙成为酒馆合伙人，各人也收到了不同势力的邀约。</p></section>
+    <section class="outcomes" aria-label="战役成果"><article class="outcome"><h3>战斗结算</h3><p>下水道与地下室两条战线先后收束。DC15 心灵攻击曾放倒 3 人，群体疗愈、油梨树术和魔法飞弹让队伍赢下夺心魔 Boss 战。</p></article><article class="outcome"><h3>新据点</h3><p>北区巨磨乳虎巷的废弃酒馆正式入手。地下酒窖、客房和未探索的秘密通道，为下一幕留下空间。</p></article><article class="outcome"><h3>势力织网</h3><p>铁手教团、翠绿闲庭、灰手、恶灵掠夺先后抛出橄榄枝。竖琴手同盟与密探组织仍待权衡。</p></article></section>
+    <section><h2>四幕回顾</h2><div class="acts"><article class="act"><h3>下水道据点</h3><p>隔着带孔屏障的对峙转为火并。灰皮矮人、守卫、油腻术与火攻轮番出现，最终揭开眼形三纳瑟标记与消失的传送门。</p></article><article class="act"><h3>废弃酒馆地下室</h3><p>三个小孩提供危险区域地图。德鲁伊化作剧毒蛇带队清理巨型蟑螂集群，恐慌与濒死没有带走任何人。</p></article><article class="act"><h3>地契与幽灵</h3><p>瓦罗以房产抵偿定金，公证完成。幽灵丽芙以灰尘写字，接受免租分成的合伙协议，酒博馆开始筹备。</p></article><article class="act"><h3>夜幕下邀约</h3><p>白猫、纸鹤、飞蛇和梦境提示把队伍推向深水城不同组织。选择尚未落定，首批任务已经逼近。</p></article></div></section>
+    <section class="split"><article class="list"><h3>财富与收获</h3><ul><li>铁盒 75 金币，每人 12 金，余下 3 金归发现者</li><li>两瓶绝版烈酒售得 75 金币</li><li>战利品与卖酒均分后，每人所得 25 金币</li><li>药水、LT 戒指、法术书、鹿角等仍待分配或使用</li></ul></article><article class="list"><h3>下一次的钩子</h3><ul><li>给酒馆命名，并决定房间分配与装修</li><li>评估竖琴手同盟和密探组织</li><li>处理灰手任务、飞蛇纹身仪式与达威尔辛格之约</li><li>追查梦境里遗失密宝的博弈</li></ul></article></section>
+    <section><h2>完整记录</h2><p class="intro">保留完整的场次文字、势力归属和待办清单，供下次开团前回顾。</p><a class="more" href="/archive/2026-08-02/">更多：阅读游戏明细</a></section>
+    <footer>深水城篇 · 第三场</footer>
+  </main>
+</body>
+</html>
