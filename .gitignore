@@ -24,5 +24,9 @@
 !middleware.ts
 !wiki/
 !wiki/**
+!phb/
+!phb/**
+!scripts/
+!scripts/phb_convert.py
 .vercel
 .env*

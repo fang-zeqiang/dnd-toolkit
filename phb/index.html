@@ -1,0 +1,731 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<title>玩家手册 PHB · 在线规则书</title>
+<style>
+  :root {
+    --ink: #0d0c0b;
+    --panel: #171411;
+    --panel-raised: #211c17;
+    --parchment: #eee3c7;
+    --paper: #f3ead3;
+    --paper-ink: #2a2118;
+    --muted: #a99b7d;
+    --gold: #c9a45c;
+    --gold-bright: #f0cf83;
+    --ember: #9f4b2f;
+    --maroon: #7a1f12;
+    --line: rgba(201, 164, 92, 0.28);
+    --drawer-w: min(22rem, 86vw);
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body { height: 100%; margin: 0; }
+
+  body {
+    display: flex;
+    flex-direction: column;
+    color: var(--parchment);
+    background: linear-gradient(135deg, #0a0908, var(--ink));
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    overflow: hidden;
+  }
+
+  header.top {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 0.75rem;
+    border-bottom: 1px solid var(--line);
+    background: var(--panel);
+    flex: none;
+  }
+
+  .icon-btn, a.icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2.75rem;
+    height: 2.75rem;
+    padding: 0 0.6rem;
+    flex: none;
+    border: 1px solid var(--line);
+    border-radius: 0.3rem;
+    background: var(--panel-raised);
+    color: var(--gold-bright);
+    font-size: 1rem;
+    text-decoration: none;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .icon-btn:active { border-color: var(--gold); }
+  .icon-btn[aria-pressed="true"] { border-color: var(--gold); background: #3a2d1a; }
+  .icon-btn:focus-visible { outline: 2px solid var(--gold-bright); outline-offset: 2px; }
+
+  .brand {
+    font: 1.05rem/1.2 Georgia, "Times New Roman", serif;
+    color: var(--gold-bright);
+    white-space: nowrap;
+  }
+
+  .spacer { flex: 1 1 auto; }
+
+  .pager {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+
+  #pageInput {
+    width: 4.2rem;
+    height: 2.75rem;
+    border: 1px solid var(--line);
+    border-radius: 0.3rem;
+    background: var(--panel-raised);
+    color: var(--parchment);
+    font-size: 1rem;
+    text-align: center;
+  }
+
+  .pager .total { color: var(--muted); font-size: 0.85rem; }
+
+  .layout {
+    flex: 1 1 auto;
+    display: flex;
+    min-height: 0;
+    position: relative;
+  }
+
+  #drawer {
+    width: var(--drawer-w);
+    flex: none;
+    display: flex;
+    flex-direction: column;
+    background: var(--panel);
+    border-right: 1px solid var(--line);
+    transition: transform 180ms ease;
+    z-index: 20;
+  }
+
+  body.drawer-collapsed #drawer { transform: translateX(-100%); position: absolute; inset: 0 auto 0 0; box-shadow: none; }
+
+  @media (max-width: 60rem) {
+    #drawer {
+      position: absolute;
+      inset: 0 auto 0 0;
+      box-shadow: 0.5rem 0 2rem rgba(0,0,0,0.5);
+    }
+    .brand { display: none; }
+    .pager .total { display: none; }
+  }
+
+  @media (max-width: 40rem) {
+    header.top { gap: 0.3rem; padding: 0.5rem; }
+    .icon-btn, a.icon-btn { min-width: 2.6rem; padding: 0 0.45rem; }
+    .hide-narrow, #prevBtn, #nextBtn { display: none; }
+    #pageInput { width: 3.4rem; }
+  }
+
+  .drawer-head {
+    padding: 0.6rem;
+    border-bottom: 1px solid var(--line);
+  }
+
+  #filterInput, #searchInput {
+    width: 100%;
+    height: 2.75rem;
+    padding: 0 0.9rem;
+    border: 1px solid var(--line);
+    border-radius: 0.3rem;
+    background: var(--panel-raised);
+    color: var(--parchment);
+    font-size: 1rem;
+  }
+
+  #filterInput:focus, #searchInput:focus { outline: none; border-color: var(--gold); }
+
+  #tocScroll {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    padding: 0.4rem 0.25rem 2rem;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .tree, .tree ul { list-style: none; margin: 0; padding-left: 1rem; }
+  .tree { padding-left: 0.2rem; }
+
+  .node-row {
+    display: flex;
+    align-items: stretch;
+    min-height: 2.5rem;
+    border-radius: 0.25rem;
+  }
+
+  .node-row:hover, .node-row.active { background: var(--panel-raised); }
+
+  .twisty {
+    flex: none;
+    width: 2.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--muted);
+    cursor: pointer;
+    user-select: none;
+    font-size: 0.7rem;
+  }
+
+  .twisty.leaf { visibility: hidden; }
+
+  li.collapsed > ul { display: none; }
+
+  .node-label {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 0.35rem 0.5rem 0.35rem 0;
+    color: var(--parchment);
+    text-decoration: none;
+    font-size: 0.92rem;
+    line-height: 1.3;
+  }
+
+  .node-label .pg { color: var(--muted); font-size: 0.75rem; font-variant-numeric: tabular-nums; }
+  .node-row.active .node-label { color: var(--gold-bright); font-weight: 700; }
+
+  .hits-title {
+    margin: 0.8rem 0.6rem 0.3rem;
+    color: var(--gold);
+    font-size: 0.75rem;
+    letter-spacing: 0.15em;
+  }
+
+  .hit {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.5rem;
+    min-height: 2.5rem;
+    align-items: center;
+    padding: 0.35rem 0.6rem;
+    border-radius: 0.25rem;
+    color: var(--parchment);
+    text-decoration: none;
+    font-size: 0.9rem;
+  }
+
+  .hit:hover { background: var(--panel-raised); }
+  .hit .pg { color: var(--muted); font-size: 0.75rem; flex: none; }
+
+  mark {
+    background: var(--gold);
+    color: #241c10;
+    border-radius: 0.15rem;
+    padding: 0 0.1rem;
+  }
+
+  #content {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    background: #1b1713;
+  }
+
+  .crumb {
+    max-width: 46rem;
+    margin: 0 auto;
+    padding: 0.9rem 1.25rem 0;
+    color: var(--muted);
+    font-size: 0.8rem;
+  }
+
+  article.page {
+    max-width: 46rem;
+    margin: 0.6rem auto 0;
+    padding: clamp(1.25rem, 4vw, 2.5rem);
+    background: var(--paper);
+    color: var(--paper-ink);
+    border-radius: 0.3rem;
+    box-shadow: 0 0.5rem 2rem rgba(0,0,0,0.45);
+    font-size: 1.02rem;
+    line-height: 1.85;
+  }
+
+  article.page p { margin: 0 0 0.7em; text-indent: 2em; }
+  article.page p:has(> b:first-child), article.page p:has(> i:first-child) { text-indent: 0; }
+  article.page h1, article.page h2, article.page h3, article.page h4 {
+    color: var(--maroon);
+    font-family: Georgia, "Songti SC", "Noto Serif CJK SC", serif;
+    line-height: 1.3;
+    scroll-margin-top: 1rem;
+  }
+  article.page h1 { font-size: 1.9rem; margin: 0.4em 0 0.5em; }
+  article.page h2 { font-size: 1.55rem; margin: 1em 0 0.5em; border-bottom: 2px solid #c9a45c; padding-bottom: 0.2em; }
+  article.page h3 { font-size: 1.3rem; margin: 1.1em 0 0.4em; border-bottom: 1px solid rgba(122,31,18,0.35); padding-bottom: 0.15em; }
+  article.page h4 { font-size: 1.08rem; margin: 1em 0 0.3em; }
+  article.page h1 b, article.page h2 b, article.page h3 b, article.page h4 b { font-weight: 400; font-size: 0.8em; opacity: 0.8; margin-left: 0.3em; }
+  article.page b, article.page i b { color: #4a1a0f; }
+
+  .tbl { overflow-x: auto; margin: 0.8em 0 1em; }
+  .tbl table { border-collapse: collapse; font-size: 0.88rem; line-height: 1.45; min-width: 60%; }
+  .tbl td { padding: 0.3em 0.6em; border-bottom: 1px solid rgba(42,33,24,0.15); vertical-align: top; }
+  .tbl tr:nth-child(odd) td { background: rgba(201,164,92,0.13); }
+
+  article.page img.scan { display: block; width: 100%; height: auto; border-radius: 0.2rem; }
+  article.page.scan-mode { padding: 0.5rem; background: #fff; }
+
+  .page-nav {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    max-width: 46rem;
+    margin: 1rem auto 3rem;
+    padding: 0 1.25rem;
+  }
+
+  .note { color: var(--muted); font-size: 0.8rem; max-width: 46rem; margin: 0.5rem auto; padding: 0 1.25rem; }
+
+  #scrim {
+    display: none;
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.45);
+    z-index: 10;
+  }
+
+  @media (max-width: 60rem) {
+    body:not(.drawer-collapsed) #scrim { display: block; }
+  }
+
+  #searchPanel {
+    display: none;
+    position: absolute;
+    inset: 0;
+    z-index: 30;
+    background: var(--panel);
+    flex-direction: column;
+  }
+
+  #searchPanel.open { display: flex; }
+
+  .search-head {
+    display: flex;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    border-bottom: 1px solid var(--line);
+  }
+
+  #searchMeta { padding: 0.5rem 0.9rem; color: var(--muted); font-size: 0.85rem; }
+
+  #searchResults {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    padding: 0 0.75rem 2rem;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .result {
+    display: block;
+    max-width: 52rem;
+    margin: 0 auto 0.6rem;
+    padding: 0.75rem 0.9rem;
+    border: 1px solid var(--line);
+    border-radius: 0.3rem;
+    background: var(--panel-raised);
+    color: var(--parchment);
+    text-decoration: none;
+  }
+
+  .result:hover, .result:focus-visible { border-color: var(--gold); outline: none; }
+  .result .r-head { display: flex; justify-content: space-between; gap: 1rem; color: var(--gold-bright); font-size: 0.9rem; margin-bottom: 0.3rem; }
+  .result .r-head span:last-child { color: var(--muted); font-size: 0.8rem; flex: none; }
+  .result .snip { color: #d6c9aa; font-size: 0.88rem; line-height: 1.6; margin: 0.15rem 0; }
+
+  @media (prefers-reduced-motion: reduce) {
+    #drawer { transition: none; }
+  }
+</style>
+</head>
+<body class="drawer-collapsed">
+  <header class="top">
+    <button class="icon-btn" id="drawerToggle" aria-label="切换目录">☰</button>
+    <a class="icon-btn" href="/" aria-label="返回首页">✦</a>
+    <span class="brand">玩家手册 PHB</span>
+    <a class="icon-btn" href="guide.html" title="建卡速查">📋<span class="hide-narrow">&nbsp;建卡速查</span></a>
+    <span class="spacer"></span>
+    <div class="pager">
+      <button class="icon-btn" id="prevBtn" aria-label="上一页">‹</button>
+      <input id="pageInput" type="number" inputmode="numeric" min="1" aria-label="页码">
+      <span class="total" id="pageTotal"></span>
+      <button class="icon-btn" id="nextBtn" aria-label="下一页">›</button>
+    </div>
+    <button class="icon-btn" id="scanToggle" aria-pressed="false" title="切换原版页面（看表格原貌）">原版</button>
+    <button class="icon-btn" id="searchToggle" aria-label="全文搜索">🔍</button>
+  </header>
+
+  <div class="layout">
+    <div id="scrim"></div>
+    <nav id="drawer" aria-label="目录">
+      <div class="drawer-head">
+        <input id="filterInput" type="search" placeholder="过滤目录 / 标题 / 法术名…" autocomplete="off">
+      </div>
+      <div id="tocScroll">
+        <div id="headHits"></div>
+        <ul class="tree" id="tocTree"></ul>
+      </div>
+    </nav>
+
+    <main id="content">
+      <div class="crumb" id="crumb"></div>
+      <article class="page" id="page"></article>
+      <p class="note" id="note">文字由 PDF 自动重排；表格错位时点右上「原版」看原书页面。</p>
+      <div class="page-nav">
+        <button class="icon-btn" id="prevBtn2">‹ 上一页</button>
+        <button class="icon-btn" id="nextBtn2">下一页 ›</button>
+      </div>
+    </main>
+
+    <section id="searchPanel" aria-label="全文搜索">
+      <div class="search-head">
+        <input id="searchInput" type="search" placeholder="全文搜索，如：火球术 / 借机攻击 / 豁免 优势（空格=同时包含）" autocomplete="off">
+        <button class="icon-btn" id="searchClose" aria-label="关闭搜索">✕</button>
+      </div>
+      <div id="searchMeta"></div>
+      <div id="searchResults"></div>
+    </section>
+  </div>
+
+<script src="toc.js"></script>
+<script>
+(function () {
+  var TOC = window.PHB_TOC;
+  var TOTAL = TOC.pages;
+  var $ = function (id) { return document.getElementById(id); };
+  var pageEl = $('page'), contentEl = $('content'), crumbEl = $('crumb');
+  var narrow = window.matchMedia('(max-width: 60rem)');
+  var scanMode = localStorage.getItem('phb_scan') === '1';
+  var current = 0;
+  var cache = {};
+
+  $('pageTotal').textContent = '/ ' + TOTAL;
+  $('pageInput').max = TOTAL;
+
+  // ---- outline helpers ----
+  var flat = [];
+  (function walk(nodes, trail) {
+    nodes.forEach(function (n) {
+      var t = trail.concat(n.name);
+      flat.push({ name: n.name, page: n.page, trail: t });
+      walk(n.children || [], t);
+    });
+  })(TOC.outline, []);
+  flat.sort(function (a, b) { return a.page - b.page; });
+
+  function trailFor(page) {
+    var best = null;
+    for (var i = 0; i < flat.length; i++) {
+      if (flat[i].page <= page) best = flat[i]; else break;
+    }
+    return best ? best.trail : [];
+  }
+
+  function esc(s) {
+    return s.replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; });
+  }
+
+  // ---- drawer ----
+  function setDrawerOpen(open) { document.body.classList.toggle('drawer-collapsed', !open); }
+  if (!narrow.matches) setDrawerOpen(true);
+  $('drawerToggle').addEventListener('click', function () {
+    setDrawerOpen(document.body.classList.contains('drawer-collapsed'));
+  });
+  $('scrim').addEventListener('click', function () { setDrawerOpen(false); });
+
+  // ---- toc tree ----
+  var rows = [];
+  function buildTree(nodes, ul, depth) {
+    nodes.forEach(function (n) {
+      var li = document.createElement('li');
+      var row = document.createElement('div');
+      row.className = 'node-row';
+      var tw = document.createElement('span');
+      var kids = n.children || [];
+      tw.className = 'twisty' + (kids.length ? '' : ' leaf');
+      tw.textContent = '▸';
+      var a = document.createElement('a');
+      a.className = 'node-label';
+      a.href = '#/p/' + n.page;
+      a.innerHTML = '<span>' + esc(n.name) + '</span><span class="pg">' + n.page + '</span>';
+      row.appendChild(tw);
+      row.appendChild(a);
+      li.appendChild(row);
+      rows.push({ row: row, li: li, page: n.page });
+      if (kids.length) {
+        var sub = document.createElement('ul');
+        buildTree(kids, sub, depth + 1);
+        li.appendChild(sub);
+        if (depth >= 1) { li.classList.add('collapsed'); } else { tw.textContent = '▾'; }
+        tw.addEventListener('click', function () {
+          var c = li.classList.toggle('collapsed');
+          tw.textContent = c ? '▸' : '▾';
+        });
+      }
+      ul.appendChild(li);
+    });
+  }
+  buildTree(TOC.outline, $('tocTree'), 0);
+
+  function markActive(page) {
+    var best = null;
+    rows.forEach(function (r) {
+      r.row.classList.remove('active');
+      if (r.page <= page && (!best || r.page >= best.page)) best = r;
+    });
+    if (best) {
+      best.row.classList.add('active');
+      var p = best.li.parentElement;
+      while (p && p.id !== 'tocTree') {
+        if (p.tagName === 'LI' && p.classList.contains('collapsed')) {
+          p.classList.remove('collapsed');
+          var tw = p.querySelector(':scope > .node-row > .twisty');
+          if (tw) tw.textContent = '▾';
+        }
+        p = p.parentElement;
+      }
+    }
+  }
+
+  // ---- heading filter (outline + every heading incl. spell names) ----
+  var filterTimer = null;
+  $('filterInput').addEventListener('input', function () {
+    clearTimeout(filterTimer);
+    filterTimer = setTimeout(renderHeadHits, 80);
+  });
+
+  function renderHeadHits() {
+    var q = $('filterInput').value.trim().toLowerCase();
+    var box = $('headHits');
+    $('tocTree').style.display = q ? 'none' : '';
+    if (!q) { box.innerHTML = ''; return; }
+    var seen = {};
+    var hits = [];
+    flat.forEach(function (f) {
+      if (f.name.toLowerCase().indexOf(q) >= 0) hits.push({ t: f.name, page: f.page, anchor: '' });
+    });
+    TOC.heads.forEach(function (h) {
+      if (h[0].toLowerCase().indexOf(q) >= 0) hits.push({ t: h[0], page: h[1], anchor: h[2] });
+    });
+    hits = hits.filter(function (h) {
+      var k = h.t + '|' + h.page;
+      if (seen[k]) return false;
+      seen[k] = 1;
+      return true;
+    }).slice(0, 200);
+    var re = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'ig');
+    var html = '<div class="hits-title">标题命中 ' + hits.length + (hits.length === 200 ? '+' : '') + '</div>';
+    hits.forEach(function (h) {
+      html += '<a class="hit" href="#/p/' + h.page + (h.anchor ? '/' + h.anchor : '') + '"><span>' +
+        esc(h.t).replace(re, function (m) { return '<mark>' + m + '</mark>'; }) +
+        '</span><span class="pg">p' + h.page + '</span></a>';
+    });
+    if (!hits.length) html += '<div class="hit">无标题命中，试试 🔍 全文搜索</div>';
+    box.innerHTML = html;
+  }
+
+  $('headHits').addEventListener('click', function (e) {
+    if (e.target.closest('a.hit') && narrow.matches) setDrawerOpen(false);
+  });
+  $('tocTree').addEventListener('click', function (e) {
+    if (e.target.closest('a.node-label') && narrow.matches) setDrawerOpen(false);
+  });
+
+  // ---- page rendering ----
+  function pad(n) { return ('00' + n).slice(-3); }
+
+  function loadPage(n) {
+    if (cache[n]) return Promise.resolve(cache[n]);
+    return fetch('pages/' + pad(n) + '.html').then(function (r) {
+      if (!r.ok) throw new Error(r.status);
+      return r.text();
+    }).then(function (t) { cache[n] = t; return t; });
+  }
+
+  function highlight(root, terms) {
+    if (!terms.length) return null;
+    var re = new RegExp(terms.map(function (t) { return t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }).join('|'), 'ig');
+    var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    var nodes = [];
+    while (walker.nextNode()) nodes.push(walker.currentNode);
+    var first = null;
+    nodes.forEach(function (node) {
+      var s = node.nodeValue;
+      re.lastIndex = 0;
+      if (!re.test(s)) return;
+      re.lastIndex = 0;
+      var frag = document.createDocumentFragment();
+      var last = 0, m;
+      while ((m = re.exec(s))) {
+        frag.appendChild(document.createTextNode(s.slice(last, m.index)));
+        var mk = document.createElement('mark');
+        mk.textContent = m[0];
+        frag.appendChild(mk);
+        if (!first) first = mk;
+        last = m.index + m[0].length;
+      }
+      frag.appendChild(document.createTextNode(s.slice(last)));
+      node.parentNode.replaceChild(frag, node);
+    });
+    return first;
+  }
+
+  function show(n, anchor, terms) {
+    n = Math.max(1, Math.min(TOTAL, n | 0));
+    current = n;
+    $('pageInput').value = n;
+    crumbEl.textContent = trailFor(n).join(' › ') + '  ·  第 ' + n + ' 页';
+    document.title = (trailFor(n).slice(-1)[0] || '玩家手册') + ' · p' + n + ' · PHB';
+    markActive(n);
+    pageEl.classList.toggle('scan-mode', scanMode);
+    $('scanToggle').setAttribute('aria-pressed', scanMode ? 'true' : 'false');
+    if (scanMode) {
+      pageEl.innerHTML = '<img class="scan" alt="原书第 ' + n + ' 页" src="img/' + pad(n) + '.jpg">';
+      contentEl.scrollTop = 0;
+      return;
+    }
+    loadPage(n).then(function (html) {
+      if (current !== n) return;
+      pageEl.innerHTML = html || '<p>（本页无文字内容，点「原版」查看图片）</p>';
+      var target = highlight(pageEl, terms || []);
+      if (anchor && document.getElementById(anchor)) target = document.getElementById(anchor);
+      if (target) target.scrollIntoView({ block: anchor ? 'start' : 'center' });
+      else contentEl.scrollTop = 0;
+    }).catch(function () {
+      pageEl.innerHTML = '<p>页面加载失败，请检查网络后重试。</p>';
+    });
+  }
+
+  function parseHash() {
+    // #/p/35  |  #/p/35/p35-12  |  #/p/35?q=火球
+    var h = decodeURIComponent(location.hash.slice(1));
+    var q = '';
+    var qi = h.indexOf('?q=');
+    if (qi >= 0) { q = h.slice(qi + 3); h = h.slice(0, qi); }
+    var m = h.match(/^\/p\/(\d+)(?:\/([\w-]+))?/);
+    return { page: m ? +m[1] : 0, anchor: m && m[2] || '', q: q };
+  }
+
+  function route() {
+    var r = parseHash();
+    if (!r.page) { location.replace('#/p/9'); return; }
+    show(r.page, r.anchor, r.q ? r.q.split(/\s+/).filter(Boolean) : []);
+  }
+  window.addEventListener('hashchange', route);
+
+  function go(n) { location.hash = '#/p/' + Math.max(1, Math.min(TOTAL, n)); }
+  [$('prevBtn'), $('prevBtn2')].forEach(function (b) { b.addEventListener('click', function () { go(current - 1); }); });
+  [$('nextBtn'), $('nextBtn2')].forEach(function (b) { b.addEventListener('click', function () { go(current + 1); }); });
+  $('pageInput').addEventListener('change', function () { go(+this.value); });
+  $('scanToggle').addEventListener('click', function () {
+    scanMode = !scanMode;
+    localStorage.setItem('phb_scan', scanMode ? '1' : '0');
+    route();
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'INPUT') return;
+    if (e.key === 'ArrowLeft') go(current - 1);
+    else if (e.key === 'ArrowRight') go(current + 1);
+    else if (e.key === '/') { e.preventDefault(); openSearch(); }
+  });
+
+  // ---- full-text search (substring, works for Chinese without tokenizing) ----
+  var TEXT = null, lowerText = null;
+  function ensureText(cb) {
+    if (TEXT) return cb();
+    $('searchMeta').textContent = '正在载入全文索引…';
+    var s = document.createElement('script');
+    s.src = 'search.js';
+    s.onload = function () {
+      TEXT = window.PHB_TEXT;
+      lowerText = TEXT.map(function (t) { return t.toLowerCase(); });
+      cb();
+    };
+    s.onerror = function () { $('searchMeta').textContent = '索引载入失败'; };
+    document.body.appendChild(s);
+  }
+
+  function openSearch() {
+    $('searchPanel').classList.add('open');
+    $('searchInput').focus();
+    ensureText(runSearch);
+  }
+  $('searchToggle').addEventListener('click', openSearch);
+  $('searchClose').addEventListener('click', function () { $('searchPanel').classList.remove('open'); });
+  var searchTimer = null;
+  $('searchInput').addEventListener('input', function () {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(function () { ensureText(runSearch); }, 150);
+  });
+  $('searchInput').addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') $('searchPanel').classList.remove('open');
+    if (e.key === 'Enter') { var a = $('searchResults').querySelector('a'); if (a) a.click(); }
+  });
+
+  function runSearch() {
+    var raw = $('searchInput').value.trim();
+    var terms = raw.toLowerCase().split(/\s+/).filter(Boolean);
+    var out = $('searchResults');
+    if (!terms.length) { $('searchMeta').textContent = '输入关键词开始搜索。全书 ' + TOTAL + ' 页。'; out.innerHTML = ''; return; }
+    var reAll = new RegExp(terms.map(function (t) { return t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }).join('|'), 'ig');
+    var results = [];
+    for (var i = 0; i < lowerText.length; i++) {
+      var lt = lowerText[i];
+      var ok = true, score = 0;
+      for (var j = 0; j < terms.length; j++) {
+        var c = lt.split(terms[j]).length - 1;
+        if (!c) { ok = false; break; }
+        score += c;
+      }
+      if (!ok) continue;
+      // headings that contain the term weigh more
+      TOC.heads.forEach(function (h) {
+        if (h[1] === i + 1 && h[0].toLowerCase().indexOf(terms[0]) >= 0) score += 20;
+      });
+      results.push({ page: i + 1, score: score });
+    }
+    results.sort(function (a, b) { return b.score - a.score || a.page - b.page; });
+    $('searchMeta').textContent = results.length ? ('共 ' + results.length + ' 页命中，按相关度排序') : '没有找到，换个说法试试（可用空格分隔多个词）';
+    var html = '';
+    results.slice(0, 80).forEach(function (r) {
+      var t = TEXT[r.page - 1], lt = lowerText[r.page - 1];
+      var snips = [], from = 0;
+      for (var k = 0; k < 3; k++) {
+        var idx = lt.indexOf(terms[0], from);
+        if (idx < 0) break;
+        var s = Math.max(0, idx - 40), e = Math.min(t.length, idx + terms[0].length + 60);
+        snips.push((s > 0 ? '…' : '') + esc(t.slice(s, e)).replace(reAll, function (m) { return '<mark>' + m + '</mark>'; }) + (e < t.length ? '…' : ''));
+        from = e;
+      }
+      html += '<a class="result" href="#/p/' + r.page + '?q=' + encodeURIComponent(raw) + '">' +
+        '<div class="r-head"><span>' + esc(trailFor(r.page).join(' › ')) + '</span><span>第 ' + r.page + ' 页</span></div>' +
+        snips.map(function (s) { return '<div class="snip">' + s.replace(/\n/g, ' ') + '</div>'; }).join('') + '</a>';
+    });
+    out.innerHTML = html;
+  }
+
+  $('searchResults').addEventListener('click', function (e) {
+    if (e.target.closest('a.result')) $('searchPanel').classList.remove('open');
+  });
+
+  route();
+})();
+</script>
+</body>
+</html>

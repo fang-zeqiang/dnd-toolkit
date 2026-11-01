@@ -1,7 +1,7 @@
 const PIN_TOKEN = "a3f9c2e17b6d4508";
 
 export const config = {
-  matcher: ["/wiki/:path*"],
+  matcher: ["/wiki/:path*", "/phb/:path*"],
 };
 
 export default function middleware(request: Request) {

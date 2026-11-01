@@ -11,6 +11,8 @@
 | `/` | 工具选择首页 |
 | `/tavern/` | 巨魔颅骨酒馆经营工具 |
 | `/map/` | GRIDBOUND 战图印制坊 |
+| `/wiki/` | 5E 不全书规则 Wiki（PIN） |
+| `/phb/` | 玩家手册 PHB 在线版 + `/phb/guide.html` 建卡速查（PIN） |
 
 ## 本地预览
 

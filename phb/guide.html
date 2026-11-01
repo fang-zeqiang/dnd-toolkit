@@ -1,0 +1,940 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<title>建卡速查 · 玩家手册 PHB</title>
+<style>
+  :root {
+    --ink: #0d0c0b;
+    --panel: #171411;
+    --panel-raised: #211c17;
+    --parchment: #eee3c7;
+    --muted: #a99b7d;
+    --gold: #c9a45c;
+    --gold-bright: #f0cf83;
+    --ember: #9f4b2f;
+    --line: rgba(201, 164, 92, 0.28);
+  }
+
+  * { box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; scroll-padding-top: 4.5rem; }
+
+  body {
+    margin: 0;
+    color: var(--parchment);
+    background: linear-gradient(135deg, #0a0908, var(--ink)) fixed;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    line-height: 1.7;
+  }
+
+  header.top {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 0.75rem;
+    border-bottom: 1px solid var(--line);
+    background: rgba(23, 20, 17, 0.96);
+    overflow-x: auto;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2.75rem;
+    height: 2.75rem;
+    padding: 0 0.75rem;
+    flex: none;
+    border: 1px solid var(--line);
+    border-radius: 0.3rem;
+    background: var(--panel-raised);
+    color: var(--gold-bright);
+    font: inherit;
+    font-size: 0.95rem;
+    text-decoration: none;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .btn:hover { border-color: var(--gold); }
+  .btn:focus-visible { outline: 2px solid var(--gold-bright); outline-offset: 2px; }
+
+  .brand { font: 1.05rem Georgia, serif; color: var(--gold-bright); white-space: nowrap; }
+
+  nav.jump { display: flex; gap: 0.35rem; margin-left: auto; }
+  nav.jump a { color: var(--muted); text-decoration: none; font-size: 0.85rem; padding: 0.4rem 0.5rem; white-space: nowrap; }
+  nav.jump a:hover { color: var(--gold-bright); }
+
+  main { width: min(64rem, calc(100% - 2rem)); margin: 0 auto; padding: 2rem 0 5rem; }
+
+  h1 { font: clamp(2rem, 5vw, 3rem)/1.1 Georgia, "Songti SC", serif; margin: 0.5rem 0 0.5rem; }
+  .lead { color: var(--muted); margin: 0 0 2rem; }
+
+  section { margin: 0 0 3rem; }
+
+  h2 {
+    font: 1.6rem/1.3 Georgia, "Songti SC", serif;
+    color: var(--gold-bright);
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 0.4rem;
+    margin: 0 0 1rem;
+  }
+
+  h3 { font-size: 1.1rem; color: var(--gold); margin: 1.5rem 0 0.5rem; }
+
+  a { color: var(--gold-bright); }
+  a.pg { font-size: 0.8rem; color: var(--gold); text-decoration: none; border: 1px solid var(--line); border-radius: 0.2rem; padding: 0 0.35rem; white-space: nowrap; }
+  a.pg:hover { border-color: var(--gold); }
+
+  ol.steps { padding-left: 1.4rem; }
+  ol.steps li { margin-bottom: 0.6rem; }
+  ol.steps b { color: var(--gold-bright); }
+
+  .tbl { overflow-x: auto; border: 1px solid var(--line); border-radius: 0.4rem; margin: 0.5rem 0 1rem; }
+  table { border-collapse: collapse; width: 100%; font-size: 0.88rem; line-height: 1.5; }
+  th, td { padding: 0.5rem 0.65rem; text-align: left; vertical-align: top; border-bottom: 1px solid rgba(201,164,92,0.14); }
+  th { color: var(--gold); font-weight: 600; background: var(--panel-raised); white-space: nowrap; position: sticky; top: 0; }
+  tr:hover td { background: rgba(201,164,92,0.05); }
+  td.nw { white-space: nowrap; }
+  td small, .muted { color: var(--muted); }
+
+  .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr)); gap: 1rem; }
+
+  .card {
+    border: 1px solid var(--line);
+    border-radius: 0.5rem;
+    padding: 1rem 1.1rem;
+    background: linear-gradient(145deg, var(--panel-raised), var(--panel));
+  }
+
+  .card h3 { margin-top: 0; }
+
+  /* builder */
+  .builder { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 1rem; }
+  @media (max-width: 52rem) { .builder { grid-template-columns: 1fr; } }
+
+  label.f { display: block; font-size: 0.8rem; color: var(--muted); margin: 0.6rem 0 0.2rem; }
+  select, input[type="number"], input[type="text"] {
+    width: 100%;
+    height: 2.75rem;
+    padding: 0 0.6rem;
+    border: 1px solid var(--line);
+    border-radius: 0.3rem;
+    background: var(--ink);
+    color: var(--parchment);
+    font: inherit;
+    font-size: 1rem;
+  }
+  select:focus, input:focus { outline: none; border-color: var(--gold); }
+
+  .abil { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 0.4rem; margin-top: 0.5rem; }
+  @media (max-width: 34rem) { .abil { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+  .abil .a { text-align: center; border: 1px solid var(--line); border-radius: 0.35rem; padding: 0.4rem 0.25rem; background: var(--ink); }
+  .abil .a .k { font-size: 0.8rem; color: var(--gold); }
+  .abil .a input { text-align: center; height: 2.5rem; padding: 0; }
+  .abil .a .fin { font-size: 1.35rem; font-weight: 700; color: var(--gold-bright); }
+  .abil .a .mod { font-size: 0.85rem; color: var(--muted); }
+  .abil .a .bonus { font-size: 0.75rem; color: #8fbf7a; min-height: 1.1em; }
+
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr)); gap: 0.4rem; margin: 0.6rem 0; }
+  .stat { border: 1px solid var(--line); border-radius: 0.35rem; padding: 0.4rem 0.5rem; background: var(--ink); text-align: center; }
+  .stat .v { font-size: 1.3rem; font-weight: 700; color: var(--gold-bright); }
+  .stat .k { font-size: 0.75rem; color: var(--muted); }
+
+  .skills { display: grid; grid-template-columns: repeat(auto-fill, minmax(10.5rem, 1fr)); gap: 0.25rem; }
+  .skills label { display: flex; align-items: center; gap: 0.45rem; min-height: 2.4rem; padding: 0 0.5rem; border-radius: 0.3rem; font-size: 0.9rem; cursor: pointer; }
+  .skills label.cls { background: rgba(201,164,92,0.1); }
+  .skills label.fixed { color: #8fbf7a; }
+  .skills input { width: 1.1rem; height: 1.1rem; accent-color: var(--gold); }
+  .skills .b { margin-left: auto; font-variant-numeric: tabular-nums; color: var(--gold-bright); }
+  .skills .ab { color: var(--muted); font-size: 0.72rem; }
+
+  .warn { color: #e08a6b; font-size: 0.85rem; }
+  .ok { color: #8fbf7a; font-size: 0.85rem; }
+  .kv { margin: 0.3rem 0; font-size: 0.92rem; }
+  .kv b { color: var(--gold); font-weight: 600; margin-right: 0.3rem; }
+  .row-btns { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.8rem; }
+  textarea#exportBox { width: 100%; min-height: 10rem; margin-top: 0.6rem; background: var(--ink); color: var(--parchment); border: 1px solid var(--line); border-radius: 0.3rem; padding: 0.6rem; font: 0.85rem/1.5 ui-monospace, Menlo, monospace; display: none; }
+
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+</style>
+</head>
+<body>
+  <header class="top">
+    <a class="btn" href="/" aria-label="返回首页">✦</a>
+    <a class="btn" href="./#/p/9">📖 阅读 PHB</a>
+    <span class="brand">建卡速查</span>
+    <nav class="jump" aria-label="本页导航">
+      <a href="#builder">角色草稿</a>
+      <a href="#steps">流程</a>
+      <a href="#abilities">属性</a>
+      <a href="#races">种族</a>
+      <a href="#classes">职业</a>
+      <a href="#casters">施法</a>
+      <a href="#backgrounds">背景</a>
+      <a href="#skills">技能</a>
+      <a href="#gear">装备</a>
+      <a href="#more">兼职/专长</a>
+    </nav>
+  </header>
+
+  <main>
+    <h1>建卡速查</h1>
+    <p class="lead">依据《玩家手册》中译 v1.6 整理的 1 级建卡要点。每条都附原书页码 <a class="pg" href="./#/p/9">p9</a>，点开即跳到在线 PHB 对应页核对原文。</p>
+
+    <!-- ============ BUILDER ============ -->
+    <section id="builder">
+      <h2>角色草稿（自动计算）</h2>
+      <p class="muted">选种族、职业、背景，分配属性后自动算出调整值、生命值、AC、豁免、技能和法术 DC。数据只存在本浏览器里。完成后点「导出文本」抄到角色卡上。</p>
+      <div class="builder">
+        <div class="card">
+          <label class="f" for="bName">角色名</label>
+          <input id="bName" type="text" placeholder="例如：布鲁诺·战锤">
+          <label class="f" for="bRace">种族 / 亚种</label>
+          <select id="bRace"></select>
+          <div id="raceExtra"></div>
+          <label class="f" for="bClass">职业</label>
+          <select id="bClass"></select>
+          <label class="f" for="bBg">背景</label>
+          <select id="bBg"></select>
+          <label class="f" for="bMethod">属性生成方式</label>
+          <select id="bMethod">
+            <option value="array">标准数组 15/14/13/12/10/8</option>
+            <option value="buy">购点 27 点（变体规则，需 DM 同意）</option>
+            <option value="roll">掷骰 4d6 取高 3 / 手动输入</option>
+          </select>
+          <div id="methodHint" class="muted" style="font-size:.85rem;margin-top:.4rem"></div>
+          <div class="abil" id="abil"></div>
+          <div class="row-btns">
+            <button class="btn" id="suggestBtn" type="button">按快速建卡建议分配</button>
+            <button class="btn" id="rollBtn" type="button">🎲 掷一组属性</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="stats" id="stats"></div>
+          <div id="summary"></div>
+          <h3>技能 <span class="muted" style="font-size:.8rem;font-weight:400">绿色=种族/背景自带；金底=职业可选</span></h3>
+          <div id="skillHint"></div>
+          <div class="skills" id="skillBox"></div>
+          <div class="row-btns">
+            <button class="btn" id="exportBtn" type="button">导出文本</button>
+            <button class="btn" id="resetBtn" type="button">重置</button>
+          </div>
+          <textarea id="exportBox" readonly></textarea>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ STEPS ============ -->
+    <section id="steps">
+      <h2>建卡七步 <a class="pg" href="./#/p/9">p9–13</a></h2>
+      <ol class="steps">
+        <li><b>选种族</b>：记下种族特质、属性加值、速度、语言、体型。部分种族还要选亚种（如丘陵 / 山地矮人）。<a class="pg" href="./#/p/14">p14</a></li>
+        <li><b>选职业</b>：记下 1 级职业特性、熟练项（护甲 / 武器 / 工具 / 豁免 / 技能）、生命骰。1 级熟练加值固定 <b>+2</b>。<a class="pg" href="./#/p/34">p34</a></li>
+        <li><b>决定属性值</b>：标准数组、4d6 取高 3 或购点，三选一，再加上种族加值。调整值 =（属性值 − 10）÷ 2，向下取整。<a class="pg" href="./#/p/10">p10</a></li>
+        <li><b>描述角色</b>：名字、外貌、阵营，以及特点 / 理想 / 牵绊 / 缺点。选一个背景，拿 2 项技能和背景特性。<a class="pg" href="./#/p/95">p95</a></li>
+        <li><b>选装备</b>：拿职业 + 背景的起始装备，或者按职业掷起始资金自己买。负重上限 = 力量 × 15 磅。<a class="pg" href="./#/p/110">p110</a></li>
+        <li><b>算战斗数值</b>：AC（无甲 = 10 + 敏捷调整值）、攻击加值（熟练 + 力量 / 敏捷）、伤害、先攻（敏捷调整值）。<a class="pg" href="./#/p/12">p12</a></li>
+        <li><b>集结</b>：和队友、DM 商量角色之间的关系和组队理由。<a class="pg" href="./#/p/12">p12</a></li>
+      </ol>
+      <div class="grid2">
+        <div class="card">
+          <h3>熟练加值用在哪 <a class="pg" href="./#/p/10">p10</a></h3>
+          <div class="kv">· 有熟练项的武器攻击检定</div>
+          <div class="kv">· 法术攻击检定 & 法术豁免 DC</div>
+          <div class="kv">· 有熟练项的技能 / 工具检定</div>
+          <div class="kv">· 有熟练项的豁免检定</div>
+          <div class="kv muted">同一次掷骰最多加一次，即使有多个来源。</div>
+        </div>
+        <div class="card">
+          <h3>常用公式</h3>
+          <div class="kv"><b>近战攻击</b>d20 + 熟练 + 力量（灵巧武器可用敏捷）</div>
+          <div class="kv"><b>远程攻击</b>d20 + 熟练 + 敏捷（投掷武器可用力量）</div>
+          <div class="kv"><b>法术豁免 DC</b>8 + 熟练 + 施法属性调整值</div>
+          <div class="kv"><b>法术攻击</b>熟练 + 施法属性调整值</div>
+          <div class="kv"><b>被动察觉</b>10 + 感知（察觉）加值</div>
+          <div class="kv"><b>升级 HP</b>生命骰平均值（向上取整）或掷骰 + 体质调整值</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ ABILITIES ============ -->
+    <section id="abilities">
+      <h2>属性值 <a class="pg" href="./#/p/10">p10–11</a> <a class="pg" href="./#/p/130">p130</a></h2>
+      <div class="grid2">
+        <div>
+          <h3>六项属性</h3>
+          <div class="tbl"><table>
+            <tr><th>属性</th><th>衡量</th><th>看重的职业</th></tr>
+            <tr><td class="nw">力量 STR</td><td>运动、肉体力量</td><td>野蛮人、战士、圣武士</td></tr>
+            <tr><td class="nw">敏捷 DEX</td><td>灵活、反射、平衡</td><td>武僧、游侠、游荡者</td></tr>
+            <tr><td class="nw">体质 CON</td><td>健康、耐力、生命力</td><td>所有职业</td></tr>
+            <tr><td class="nw">智力 INT</td><td>思维敏锐、记忆、分析</td><td>法师</td></tr>
+            <tr><td class="nw">感知 WIS</td><td>警惕、直觉、洞察</td><td>牧师、德鲁伊</td></tr>
+            <tr><td class="nw">魅力 CHA</td><td>自信、口才、领导力</td><td>吟游诗人、术士、邪术师</td></tr>
+          </table></div>
+        </div>
+        <div>
+          <h3>购点花费（27 点，购前 8–15）</h3>
+          <div class="tbl"><table>
+            <tr><th>属性值</th><td>8</td><td>9</td><td>10</td><td>11</td><td>12</td><td>13</td><td>14</td><td>15</td></tr>
+            <tr><th>花费</th><td>0</td><td>1</td><td>2</td><td>3</td><td>4</td><td>5</td><td>7</td><td>9</td></tr>
+          </table></div>
+          <h3>属性值 → 调整值</h3>
+          <div class="tbl"><table>
+            <tr><th>属性值</th><td>1</td><td>2–3</td><td>4–5</td><td>6–7</td><td>8–9</td><td>10–11</td><td>12–13</td><td>14–15</td><td>16–17</td><td>18–19</td><td>20–21</td></tr>
+            <tr><th>调整值</th><td>−5</td><td>−4</td><td>−3</td><td>−2</td><td>−1</td><td>+0</td><td>+1</td><td>+2</td><td>+3</td><td>+4</td><td>+5</td></tr>
+          </table></div>
+        </div>
+      </div>
+      <h3>角色升级表 <a class="pg" href="./#/p/13">p13</a></h3>
+      <div class="tbl"><table>
+        <tr><th>等级</th><td>1</td><td>2</td><td>3</td><td>4</td><td>5</td><td>6</td><td>7</td><td>8</td><td>9</td><td>10</td><td>11</td><td>12</td><td>13</td><td>14</td><td>15</td><td>16</td><td>17</td><td>18</td><td>19</td><td>20</td></tr>
+        <tr><th>经验值</th><td>0</td><td>300</td><td>900</td><td>2,700</td><td>6,500</td><td>14,000</td><td>23,000</td><td>34,000</td><td>48,000</td><td>64,000</td><td>85,000</td><td>100,000</td><td>120,000</td><td>140,000</td><td>165,000</td><td>195,000</td><td>225,000</td><td>265,000</td><td>305,000</td><td>355,000</td></tr>
+        <tr><th>熟练加值</th><td>+2</td><td>+2</td><td>+2</td><td>+2</td><td>+3</td><td>+3</td><td>+3</td><td>+3</td><td>+4</td><td>+4</td><td>+4</td><td>+4</td><td>+5</td><td>+5</td><td>+5</td><td>+5</td><td>+6</td><td>+6</td><td>+6</td><td>+6</td></tr>
+      </table></div>
+      <p class="muted">属性值提升：两项各 +1 或一项 +2，上限 20（用专长可选规则时可改拿一个专长）。体质调整值提高时，HP 上限按当前等级追溯增加。<a class="pg" href="./#/p/12">p12</a></p>
+    </section>
+
+    <!-- ============ RACES ============ -->
+    <section id="races">
+      <h2>种族速查 <a class="pg" href="./#/p/14">p14–33</a></h2>
+      <div class="tbl"><table id="raceTable"></table></div>
+      <p class="muted">黑暗视觉：60 尺内的微光视同明亮光照，黑暗视同微光，只能看到灰度。龙裔吐息：DC = 8 + 体质调整值 + 熟练加值，2d6（6 级 3d6、11 级 4d6、16 级 5d6），短休或长休后恢复。<a class="pg" href="./#/p/26">p26</a></p>
+      <h3>龙族血统 <a class="pg" href="./#/p/26">p26</a></h3>
+      <div class="tbl"><table>
+        <tr><th>龙种</th><th>伤害类型</th><th>吐息</th></tr>
+        <tr><td>黑 / 赤铜</td><td>强酸</td><td>5×30 尺线状（敏捷豁免）</td></tr>
+        <tr><td>蓝 / 青铜</td><td>闪电</td><td>5×30 尺线状（敏捷豁免）</td></tr>
+        <tr><td>黄铜</td><td>火焰</td><td>5×30 尺线状（敏捷豁免）</td></tr>
+        <tr><td>金 / 红</td><td>火焰</td><td>15 尺锥状（敏捷豁免）</td></tr>
+        <tr><td>绿</td><td>毒素</td><td>15 尺锥状（体质豁免）</td></tr>
+        <tr><td>银 / 白</td><td>冷冻</td><td>15 尺锥状（体质豁免）</td></tr>
+      </table></div>
+    </section>
+
+    <!-- ============ CLASSES ============ -->
+    <section id="classes">
+      <h2>职业速查 <a class="pg" href="./#/p/34">p34</a></h2>
+      <div class="tbl"><table id="classTable"></table></div>
+      <h3>快速建卡建议（原书每职业开头）</h3>
+      <div class="tbl"><table id="quickTable"></table></div>
+    </section>
+
+    <!-- ============ CASTERS ============ -->
+    <section id="casters">
+      <h2>施法职业 1 级 <a class="pg" href="./#/p/151">p151</a></h2>
+      <div class="tbl"><table>
+        <tr><th>职业</th><th>施法属性</th><th>戏法</th><th>1 级法术</th><th>1 环法术位</th><th>备注</th></tr>
+        <tr><td>吟游诗人 <a class="pg" href="./#/p/39">p39</a></td><td>魅力</td><td>2</td><td>已知 4 个</td><td>2</td><td>乐器可作法器；仪式施法</td></tr>
+        <tr><td>牧师 <a class="pg" href="./#/p/43">p43</a></td><td>感知</td><td>3</td><td>每日准备 感知调整值 + 等级 个（至少 1）</td><td>2</td><td>领域法术始终准备、不占数量</td></tr>
+        <tr><td>德鲁伊 <a class="pg" href="./#/p/50">p50</a></td><td>感知</td><td>2</td><td>每日准备 感知调整值 + 等级 个（至少 1）</td><td>2</td><td>德鲁伊法器；仪式施法</td></tr>
+        <tr><td>术士 <a class="pg" href="./#/p/78">p78</a></td><td>魅力</td><td>4</td><td>已知 2 个</td><td>2</td><td>2 级起有术法点</td></tr>
+        <tr><td>邪术师 <a class="pg" href="./#/p/83">p83</a></td><td>魅力</td><td>2</td><td>已知 2 个</td><td>1（契约魔法）</td><td>短休即恢复法术位</td></tr>
+        <tr><td>法师 <a class="pg" href="./#/p/89">p89</a></td><td>智力</td><td>3</td><td>法术书 6 个 1 环；每日准备 智力调整值 + 等级 个</td><td>2</td><td>奥术回想；仪式施法</td></tr>
+        <tr><td>圣武士 <a class="pg" href="./#/p/64">p64</a></td><td>魅力</td><td>—</td><td colspan="2">2 级开始施法</td><td>半施法者</td></tr>
+        <tr><td>游侠 <a class="pg" href="./#/p/70">p70</a></td><td>感知</td><td>—</td><td colspan="2">2 级开始施法</td><td>半施法者</td></tr>
+      </table></div>
+      <p class="muted">法术列表 <a class="pg" href="./#/p/155">p155</a>，法术详述按拼音字母排序 <a class="pg" href="./#/p/165">p165</a>。在线 PHB 左侧过滤框输入法术名（如「魔法飞弹」）可直接跳到法术条目。</p>
+    </section>
+
+    <!-- ============ BACKGROUNDS ============ -->
+    <section id="backgrounds">
+      <h2>背景速查 <a class="pg" href="./#/p/98">p98–109</a></h2>
+      <div class="tbl"><table id="bgTable"></table></div>
+      <p class="muted">每个背景还附有建议的特点 / 理想 / 牵绊 / 缺点表（d6–d8），点页码查看。可与 DM 商量自定义背景：任选 2 项技能 + 共 2 项工具或语言 + 一个背景特性。<a class="pg" href="./#/p/99">p99</a></p>
+    </section>
+
+    <!-- ============ SKILLS ============ -->
+    <section id="skills">
+      <h2>技能与属性 <a class="pg" href="./#/p/131">p131–135</a></h2>
+      <div class="tbl"><table>
+        <tr><th>力量</th><td>运动</td></tr>
+        <tr><th>敏捷</th><td>体操、巧手、隐匿</td></tr>
+        <tr><th>智力</th><td>奥秘、历史、调查、自然、宗教</td></tr>
+        <tr><th>感知</th><td>驯兽、洞悉、医药、察觉、求生</td></tr>
+        <tr><th>魅力</th><td>欺瞒、威吓、表演、游说</td></tr>
+        <tr><th>体质</th><td class="muted">无对应技能</td></tr>
+      </table></div>
+      <h3>语言 <a class="pg" href="./#/p/96">p96–97</a></h3>
+      <div class="grid2">
+        <div class="card"><h3>标准语言</h3>通用语、矮人语、精灵语、巨人语、侏儒语、地精语、半身人语、兽人语</div>
+        <div class="card"><h3>额外语言（需 DM 同意）</h3>深渊语、天界语、龙语、深潜语、炼狱语、原初语、木族语、地底通用语</div>
+      </div>
+    </section>
+
+    <!-- ============ GEAR ============ -->
+    <section id="gear">
+      <h2>装备 <a class="pg" href="./#/p/110">p110–122</a></h2>
+      <div class="grid2">
+        <div>
+          <h3>按职业的起始资金 <a class="pg" href="./#/p/110">p110</a></h3>
+          <div class="tbl"><table>
+            <tr><th>职业</th><th>资金</th><th>职业</th><th>资金</th></tr>
+            <tr><td>野蛮人</td><td>2d4×10 gp</td><td>圣武士</td><td>5d4×10 gp</td></tr>
+            <tr><td>吟游诗人</td><td>5d4×10 gp</td><td>游侠</td><td>5d4×10 gp</td></tr>
+            <tr><td>牧师</td><td>5d4×10 gp</td><td>游荡者</td><td>4d4×10 gp</td></tr>
+            <tr><td>德鲁伊</td><td>2d4×10 gp</td><td>术士</td><td>3d4×10 gp</td></tr>
+            <tr><td>战士</td><td>5d4×10 gp</td><td>邪术师</td><td>4d4×10 gp</td></tr>
+            <tr><td>武僧</td><td>5d4 gp</td><td>法师</td><td>4d4×10 gp</td></tr>
+          </table></div>
+          <p class="muted">兑换：1 pp = 10 gp = 20 ep = 100 sp = 1000 cp。</p>
+        </div>
+        <div>
+          <h3>护甲表 <a class="pg" href="./#/p/112">p111–112</a></h3>
+          <div class="tbl"><table>
+            <tr><th>护甲</th><th>AC</th><th>力量</th><th>隐匿</th><th>价格</th></tr>
+            <tr><td colspan="5" class="muted">轻甲（1 分钟穿 / 脱）</td></tr>
+            <tr><td>布甲</td><td>11 + 敏捷</td><td>—</td><td>劣势</td><td>5 gp</td></tr>
+            <tr><td>皮甲</td><td>11 + 敏捷</td><td>—</td><td>—</td><td>10 gp</td></tr>
+            <tr><td>镶钉皮甲</td><td>12 + 敏捷</td><td>—</td><td>—</td><td>45 gp</td></tr>
+            <tr><td colspan="5" class="muted">中甲（5 分钟穿 / 1 分钟脱；敏捷最多 +2）</td></tr>
+            <tr><td>兽皮甲</td><td>12 + 敏捷</td><td>—</td><td>—</td><td>10 gp</td></tr>
+            <tr><td>链甲衫</td><td>13 + 敏捷</td><td>—</td><td>—</td><td>50 gp</td></tr>
+            <tr><td>鳞甲</td><td>14 + 敏捷</td><td>—</td><td>劣势</td><td>50 gp</td></tr>
+            <tr><td>胸甲</td><td>14 + 敏捷</td><td>—</td><td>—</td><td>400 gp</td></tr>
+            <tr><td>半身板甲</td><td>15 + 敏捷</td><td>—</td><td>劣势</td><td>750 gp</td></tr>
+            <tr><td colspan="5" class="muted">重甲（10 分钟穿 / 5 分钟脱；不加敏捷）</td></tr>
+            <tr><td>环甲</td><td>14</td><td>—</td><td>劣势</td><td>30 gp</td></tr>
+            <tr><td>链甲</td><td>16</td><td>13</td><td>劣势</td><td>75 gp</td></tr>
+            <tr><td>板条甲</td><td>17</td><td>15</td><td>劣势</td><td>200 gp</td></tr>
+            <tr><td>板甲</td><td>18</td><td>15</td><td>劣势</td><td>1,500 gp</td></tr>
+            <tr><td>盾牌</td><td>+2</td><td>—</td><td>—</td><td>10 gp</td></tr>
+          </table></div>
+          <p class="muted">穿没有熟练项的护甲：涉及力量 / 敏捷的属性检定、豁免、攻击检定都有劣势，而且不能施法。重甲力量不够：速度 −10 尺。</p>
+        </div>
+      </div>
+      <h3>武器表 <a class="pg" href="./#/p/115">p115</a> · 武器属性 <a class="pg" href="./#/p/113">p113</a></h3>
+      <div class="tbl"><table id="weaponTable"></table></div>
+      <p class="muted">冒险用品与套装 <a class="pg" href="./#/p/114">p114</a>，工具 <a class="pg" href="./#/p/118">p118</a>，饰品表 <a class="pg" href="./#/p/122">p122</a>。</p>
+    </section>
+
+    <!-- ============ MULTICLASS / FEATS ============ -->
+    <section id="more">
+      <h2>兼职与专长（可选规则） <a class="pg" href="./#/p/123">p123–128</a></h2>
+      <div class="grid2">
+        <div>
+          <h3>兼职先决条件 <a class="pg" href="./#/p/123">p123</a></h3>
+          <div class="tbl"><table>
+            <tr><th>职业</th><th>最低属性</th><th>兼职获得的熟练项</th></tr>
+            <tr><td>野蛮人</td><td>力量 13</td><td>盾牌、简易武器、军用武器</td></tr>
+            <tr><td>吟游诗人</td><td>魅力 13</td><td>轻甲、1 项技能、1 种乐器</td></tr>
+            <tr><td>牧师</td><td>感知 13</td><td>轻甲、中甲、盾牌</td></tr>
+            <tr><td>德鲁伊</td><td>感知 13</td><td>轻甲、中甲、盾牌（非金属）</td></tr>
+            <tr><td>战士</td><td>力量或敏捷 13</td><td>轻甲、中甲、盾牌、简易 / 军用武器</td></tr>
+            <tr><td>武僧</td><td>敏捷 13 且感知 13</td><td>简易武器、短剑</td></tr>
+            <tr><td>圣武士</td><td>力量 13 且魅力 13</td><td>轻甲、中甲、盾牌、简易 / 军用武器</td></tr>
+            <tr><td>游侠</td><td>敏捷 13 且感知 13</td><td>轻甲、中甲、盾牌、简易 / 军用武器、1 项职业技能</td></tr>
+            <tr><td>游荡者</td><td>敏捷 13</td><td>轻甲、1 项职业技能、盗贼工具</td></tr>
+            <tr><td>术士</td><td>魅力 13</td><td>—</td></tr>
+            <tr><td>邪术师</td><td>魅力 13</td><td>轻甲、简易武器</td></tr>
+            <tr><td>法师</td><td>智力 13</td><td>—</td></tr>
+          </table></div>
+          <p class="muted">现职业和新职业的要求都要满足。熟练加值、升级所需经验值都按总等级算；只有角色第 1 级拿满额 HP。</p>
+        </div>
+        <div>
+          <h3>专长一览 <a class="pg" href="./#/p/124">p124</a></h3>
+          <div class="tbl"><table id="featTable"></table></div>
+        </div>
+      </div>
+      <h3>其他常查规则</h3>
+      <p>
+        <a class="pg" href="./#/p/130/p130-19">优势与劣势</a>
+        <a class="pg" href="./#/p/140/p140-4">休息</a>
+        <a class="pg" href="./#/p/142/p142-14">先攻</a>
+        <a class="pg" href="./#/p/144/p144-25">战斗动作</a>
+        <a class="pg" href="./#/p/146/p146-28">借机攻击</a>
+        <a class="pg" href="./#/p/146/p146-32">双持武器</a>
+        <a class="pg" href="./#/p/147/p147-10">掩护</a>
+        <a class="pg" href="./#/p/148/p148-34">死亡豁免</a>
+        <a class="pg" href="./#/p/152/p152-31">专注</a>
+        <a class="pg" href="./#/p/234">状态</a>
+        <a class="pg" href="./#/p/98/p98-6">激励</a>
+      </p>
+    </section>
+  </main>
+
+<script>
+(function () {
+  var AB = ['str', 'dex', 'con', 'int', 'wis', 'cha'];
+  var ABN = { str: '力量', dex: '敏捷', con: '体质', int: '智力', wis: '感知', cha: '魅力' };
+  var SKILLS = [
+    ['运动', 'str'], ['体操', 'dex'], ['巧手', 'dex'], ['隐匿', 'dex'],
+    ['奥秘', 'int'], ['历史', 'int'], ['调查', 'int'], ['自然', 'int'], ['宗教', 'int'],
+    ['驯兽', 'wis'], ['洞悉', 'wis'], ['医药', 'wis'], ['察觉', 'wis'], ['求生', 'wis'],
+    ['欺瞒', 'cha'], ['威吓', 'cha'], ['表演', 'cha'], ['游说', 'cha']
+  ];
+  var ALL_SKILLS = SKILLS.map(function (s) { return s[0]; });
+
+  var RACES = [
+    { id: 'hill-dwarf', name: '丘陵矮人', ab: { con: 2, wis: 1 }, size: '中型', speed: 25, dark: 60, page: 15, hp: 1,
+      traits: '矮人体魄（毒素豁免优势、毒素抗性）；矮人军训（战斧、手斧、轻锤、战锤）；工匠工具（铁匠 / 酿酒 / 石匠选一）；石中精妙；矮人刚毅（HP 上限 +1，每级再 +1）；穿重甲不减速',
+      lang: '通用语、矮人语' },
+    { id: 'mountain-dwarf', name: '山地矮人', ab: { con: 2, str: 2 }, size: '中型', speed: 25, dark: 60, page: 15,
+      traits: '矮人体魄；矮人军训；工匠工具；石中精妙；矮人护甲训练（轻甲、中甲）；穿重甲不减速',
+      lang: '通用语、矮人语' },
+    { id: 'high-elf', name: '高等精灵', ab: { dex: 2, int: 1 }, size: '中型', speed: 30, dark: 60, page: 17, skills: ['察觉'],
+      traits: '敏锐感官（察觉熟练）；精类血统（魅惑豁免优势、免疫魔法睡眠）；出神（冥想 4 小时）；精灵武器训练（长剑、短剑、短弓、长弓）；1 个法师戏法（智力）；额外 1 门语言',
+      lang: '通用语、精灵语 + 1 门' },
+    { id: 'wood-elf', name: '木精灵', ab: { dex: 2, wis: 1 }, size: '中型', speed: 35, dark: 60, page: 17, skills: ['察觉'],
+      traits: '敏锐感官；精类血统；出神；精灵武器训练；轻捷步伐（速度 35 尺）；野性面具（自然现象轻度遮蔽即可躲藏）',
+      lang: '通用语、精灵语' },
+    { id: 'drow', name: '卓尔（黑暗精灵）', ab: { dex: 2, cha: 1 }, size: '中型', speed: 30, dark: 120, page: 17, skills: ['察觉'],
+      traits: '敏锐感官；精类血统；出神；高等黑暗视觉 120 尺；日照敏感（阳光下攻击 / 视觉察觉劣势）；卓尔魔法（舞光术，3 级妖火，5 级黑暗术，魅力）；卓尔武器训练（刺剑、短剑、手弩）',
+      lang: '通用语、精灵语' },
+    { id: 'lightfoot', name: '轻足半身人', ab: { dex: 2, cha: 1 }, size: '小型', speed: 25, dark: 0, page: 20,
+      traits: '幸运（d20 掷出 1 可重掷）；勇气（恐慌豁免优势）；半身人灵巧（穿过更大体型生物）；天生善匿（以更大生物为遮蔽即可躲藏）',
+      lang: '通用语、半身人语' },
+    { id: 'stout', name: '强魄半身人', ab: { dex: 2, con: 1 }, size: '小型', speed: 25, dark: 0, page: 20,
+      traits: '幸运；勇气；半身人灵巧；敦实体魄（毒素豁免优势、毒素抗性）',
+      lang: '通用语、半身人语' },
+    { id: 'human', name: '人类', ab: { str: 1, dex: 1, con: 1, int: 1, wis: 1, cha: 1 }, size: '中型', speed: 30, dark: 0, page: 22,
+      traits: '全属性 +1',
+      lang: '通用语 + 1 门' },
+    { id: 'variant-human', name: '变体人类', ab: {}, pick: 2, pickVal: 1, size: '中型', speed: 30, dark: 0, page: 24, freeSkills: 1,
+      traits: '任选两项不同属性各 +1；1 项自选技能熟练；1 个自选专长（需 DM 同意）',
+      lang: '通用语 + 1 门' },
+    { id: 'dragonborn', name: '龙裔', ab: { str: 2, cha: 1 }, size: '中型', speed: 30, dark: 0, page: 25,
+      traits: '龙族血统（选龙种）；吐息武器（动作，2d6，DC 8 + 体质 + 熟练，短休恢复）；对应伤害类型抗性',
+      lang: '通用语、龙语' },
+    { id: 'forest-gnome', name: '森林侏儒', ab: { int: 2, dex: 1 }, size: '小型', speed: 25, dark: 60, page: 27,
+      traits: '侏儒狡黠（对抗魔法的智 / 感 / 魅豁免优势）；自然幻术师（次级幻影，智力）；小型野兽交谈',
+      lang: '通用语、侏儒语' },
+    { id: 'rock-gnome', name: '岩侏儒', ab: { int: 2, con: 1 }, size: '小型', speed: 25, dark: 60, page: 27,
+      traits: '侏儒狡黠；工匠学识（魔法 / 炼金 / 工艺物品的历史检定双倍熟练）；修补匠（修补工具熟练，可造发条小装置）',
+      lang: '通用语、侏儒语' },
+    { id: 'half-elf', name: '半精灵', ab: { cha: 2 }, pick: 2, pickVal: 1, pickExclude: 'cha', size: '中型', speed: 30, dark: 60, page: 29, freeSkills: 2,
+      traits: '魅力 +2，另选两项属性各 +1；精类血统；多才多艺（2 项自选技能）',
+      lang: '通用语、精灵语 + 1 门' },
+    { id: 'half-orc', name: '半兽人', ab: { str: 2, con: 1 }, size: '中型', speed: 30, dark: 60, page: 30, skills: ['威吓'],
+      traits: '凶恶（威吓熟练）；坚韧不屈（HP 降到 0 时改为 1，长休恢复）；凶蛮攻击（近战重击额外 1 个伤害骰）',
+      lang: '通用语、兽人语' },
+    { id: 'tiefling', name: '提夫林', ab: { cha: 2, int: 1 }, size: '中型', speed: 30, dark: 60, page: 32,
+      traits: '炎狱抗性（火焰抗性）；地狱遗赠（奇术；3 级炼狱叱喝（2 环），5 级黑暗术，魅力，长休恢复）',
+      lang: '通用语、炼狱语' }
+  ];
+
+  var CLASSES = [
+    { id: 'barbarian', name: '野蛮人', hd: 12, primary: '力量', saves: ['str', 'con'], armor: '轻甲、中甲、盾牌', weapons: '简易武器、军用武器', tools: '无',
+      skillN: 2, skillFrom: ['驯兽', '运动', '威吓', '自然', '察觉', '求生'], f1: '狂暴、无甲防御', ac: 'barb', page: 35, table: 35, wealth: '2d4×10 gp',
+      quick: '最高属性给力量，次高给体质；背景选化外之民。', order: ['str', 'con', 'dex', 'wis', 'cha', 'int'], bg: 'outlander' },
+    { id: 'bard', name: '吟游诗人', hd: 8, primary: '魅力', saves: ['dex', 'cha'], armor: '轻甲', weapons: '简易武器、手弩、长剑、刺剑、短剑', tools: '三种乐器',
+      skillN: 3, skillFrom: ALL_SKILLS, f1: '施法、诗人激励（d6）', cast: 'cha', page: 38, table: 39, wealth: '5d4×10 gp',
+      quick: '最高给魅力，次高给敏捷；背景选艺人。戏法：舞光术、恶毒嘲笑；1 环：魅惑人类、侦测魔法、治愈真言、雷鸣波。', order: ['cha', 'dex', 'con', 'wis', 'int', 'str'], bg: 'entertainer' },
+    { id: 'cleric', name: '牧师', hd: 8, primary: '感知', saves: ['wis', 'cha'], armor: '轻甲、中甲、盾牌', weapons: '简易武器', tools: '无',
+      skillN: 2, skillFrom: ['历史', '洞悉', '医药', '游说', '宗教'], f1: '施法、神圣领域（1 级选领域）', cast: 'wis', page: 42, table: 43, wealth: '5d4×10 gp',
+      quick: '最高给感知，次高给力量或体质；背景选侍僧。', order: ['wis', 'con', 'str', 'cha', 'dex', 'int'], bg: 'acolyte' },
+    { id: 'druid', name: '德鲁伊', hd: 8, primary: '感知', saves: ['int', 'wis'], armor: '轻甲、中甲、盾牌（不用金属制品）', weapons: '短棒、匕首、飞镖、标枪、硬头锤、长棍、弯刀、镰刀、投石索、矛', tools: '草药工具',
+      skillN: 2, skillFrom: ['奥秘', '驯兽', '洞悉', '医药', '自然', '察觉', '宗教', '求生'], f1: '德鲁伊语、施法', cast: 'wis', page: 49, table: 50, wealth: '2d4×10 gp',
+      quick: '最高给感知，次高给体质；背景选隐士。', order: ['wis', 'con', 'dex', 'int', 'cha', 'str'], bg: 'hermit' },
+    { id: 'fighter', name: '战士', hd: 10, primary: '力量或敏捷', saves: ['str', 'con'], armor: '全部护甲、盾牌', weapons: '简易武器、军用武器', tools: '无',
+      skillN: 2, skillFrom: ['体操', '驯兽', '运动', '历史', '洞悉', '威吓', '察觉', '求生'], f1: '战斗风格、回气', page: 54, table: 54, wealth: '5d4×10 gp',
+      quick: '近战给力量、远程 / 灵巧给敏捷，次高给体质（想走奥法骑士就给智力）；背景选士兵。', order: ['str', 'con', 'dex', 'wis', 'cha', 'int'], bg: 'soldier' },
+    { id: 'monk', name: '武僧', hd: 8, primary: '敏捷、感知', saves: ['str', 'dex'], armor: '无', weapons: '简易武器、短剑', tools: '一种工匠工具或一种乐器',
+      skillN: 2, skillFrom: ['体操', '运动', '历史', '洞悉', '宗教', '隐匿'], f1: '无甲防御、武艺', ac: 'monk', page: 58, table: 59, wealth: '5d4 gp',
+      quick: '最高给敏捷，次高给感知；背景选隐士。', order: ['dex', 'wis', 'con', 'str', 'int', 'cha'], bg: 'hermit' },
+    { id: 'paladin', name: '圣武士', hd: 10, primary: '力量、魅力', saves: ['wis', 'cha'], armor: '全部护甲、盾牌', weapons: '简易武器、军用武器', tools: '无',
+      skillN: 2, skillFrom: ['运动', '洞悉', '威吓', '医药', '游说', '宗教'], f1: '神圣感知、圣疗（2 级起施法）', cast: 'cha', castFrom: 2, page: 63, table: 64, wealth: '5d4×10 gp',
+      quick: '最高给力量，次高给魅力；背景选贵族。', order: ['str', 'cha', 'con', 'wis', 'dex', 'int'], bg: 'noble' },
+    { id: 'ranger', name: '游侠', hd: 10, primary: '敏捷、感知', saves: ['str', 'dex'], armor: '轻甲、中甲、盾牌', weapons: '简易武器、军用武器', tools: '无',
+      skillN: 3, skillFrom: ['驯兽', '运动', '洞悉', '调查', '自然', '察觉', '隐匿', '求生'], f1: '宿敌、自然探索者（2 级起施法）', cast: 'wis', castFrom: 2, page: 69, table: 70, wealth: '5d4×10 gp',
+      quick: '最高给敏捷，次高给感知（双持流可力量高于敏捷）；背景选化外之民。', order: ['dex', 'wis', 'con', 'str', 'int', 'cha'], bg: 'outlander' },
+    { id: 'rogue', name: '游荡者', hd: 8, primary: '敏捷', saves: ['dex', 'int'], armor: '轻甲', weapons: '简易武器、手弩、长剑、刺剑、短剑', tools: '盗贼工具',
+      skillN: 4, skillFrom: ['体操', '运动', '欺瞒', '洞悉', '威吓', '调查', '察觉', '表演', '游说', '巧手', '隐匿'], f1: '专精、偷袭（1d6）、盗贼黑话', page: 73, table: 73, wealth: '4d4×10 gp',
+      quick: '最高给敏捷；想调查 / 诡术师就次高给智力，走社交就给魅力；背景选骗子。', order: ['dex', 'int', 'con', 'cha', 'wis', 'str'], bg: 'charlatan' },
+    { id: 'sorcerer', name: '术士', hd: 6, primary: '魅力', saves: ['con', 'cha'], armor: '无', weapons: '匕首、飞镖、投石索、长棍、轻弩', tools: '无',
+      skillN: 2, skillFrom: ['奥秘', '欺瞒', '洞悉', '威吓', '游说', '宗教'], f1: '施法、术法起源（1 级选）', cast: 'cha', page: 77, table: 78, wealth: '3d4×10 gp',
+      quick: '最高给魅力，次高给体质；背景选隐士。戏法：光亮术、魔法伎俩、冷冻射线、电爪；1 环：护盾术、魔法飞弹。', order: ['cha', 'con', 'dex', 'wis', 'int', 'str'], bg: 'hermit' },
+    { id: 'warlock', name: '邪术师', hd: 8, primary: '魅力', saves: ['wis', 'cha'], armor: '轻甲', weapons: '简易武器', tools: '无',
+      skillN: 2, skillFrom: ['奥秘', '欺瞒', '历史', '威吓', '调查', '自然', '宗教'], f1: '异界宗主（1 级选）、契约魔法', cast: 'cha', page: 82, table: 83, wealth: '4d4×10 gp',
+      note: '中译本技能列表写作「洞悉」，英文原版为 Investigation（调查），此处按原版。',
+      quick: '最高给魅力，次高给体质；背景选骗子。戏法：魔能爆、冻寒之触；1 环：魅惑人类、巫术箭。', order: ['cha', 'con', 'dex', 'wis', 'int', 'str'], bg: 'charlatan' },
+    { id: 'wizard', name: '法师', hd: 6, primary: '智力', saves: ['int', 'wis'], armor: '无', weapons: '匕首、飞镖、投石索、长棍、轻弩', tools: '无',
+      skillN: 2, skillFrom: ['奥秘', '历史', '洞悉', '调查', '医药', '宗教'], f1: '施法、奥术回想', cast: 'int', page: 88, table: 89, wealth: '4d4×10 gp',
+      quick: '最高给智力，次高给体质或敏捷；背景选智者。戏法：光亮术、法师之手、冷冻射线；1 环：燃烧之手、魅惑人类、羽落术、法师护甲、魔法飞弹、睡眠术。', order: ['int', 'con', 'dex', 'wis', 'cha', 'str'], bg: 'sage' }
+  ];
+
+  var BGS = [
+    { id: 'acolyte', name: '侍僧', skills: ['洞悉', '宗教'], tools: '—', lang: '任选 2 门', feat: '信仰庇护', gold: 15, page: 99 },
+    { id: 'charlatan', name: '骗子', skills: ['欺瞒', '巧手'], tools: '易容工具、文书伪造工具', lang: '—', feat: '假身份', gold: 15, page: 100 },
+    { id: 'criminal', name: '罪犯', skills: ['欺瞒', '隐匿'], tools: '一种赌具、盗贼工具', lang: '—', feat: '罪犯联络员', gold: 15, page: 100 },
+    { id: 'entertainer', name: '艺人', skills: ['体操', '表演'], tools: '易容工具、一种乐器', lang: '—', feat: '人见人爱', gold: 15, page: 101 },
+    { id: 'folk-hero', name: '平民英雄', skills: ['驯兽', '求生'], tools: '一种工匠工具、载具（陆运）', lang: '—', feat: '好客乡民', gold: 10, page: 102 },
+    { id: 'guild-artisan', name: '行会工匠', skills: ['洞悉', '游说'], tools: '一种工匠工具', lang: '1 门', feat: '行会成员', gold: 15, page: 103 },
+    { id: 'hermit', name: '隐士', skills: ['医药', '宗教'], tools: '草药工具', lang: '1 门', feat: '探索', gold: 5, page: 104 },
+    { id: 'noble', name: '贵族', skills: ['历史', '游说'], tools: '一种赌具', lang: '1 门', feat: '特权地位', gold: 25, page: 104 },
+    { id: 'outlander', name: '化外之民', skills: ['运动', '求生'], tools: '一种乐器', lang: '1 门', feat: '漂泊者', gold: 10, page: 106 },
+    { id: 'sage', name: '智者', skills: ['奥秘', '历史'], tools: '—', lang: '2 门', feat: '研究者', gold: 10, page: 106 },
+    { id: 'sailor', name: '水手', skills: ['运动', '察觉'], tools: '领航工具、载具（水运）', lang: '—', feat: '船家路子', gold: 10, page: 107 },
+    { id: 'soldier', name: '士兵', skills: ['运动', '威吓'], tools: '一种赌具、载具（陆运）', lang: '—', feat: '军阶', gold: 10, page: 108 },
+    { id: 'urchin', name: '流浪儿', skills: ['巧手', '隐匿'], tools: '易容工具、盗贼工具', lang: '—', feat: '城中秘密', gold: 10, page: 109 }
+  ];
+
+  var WEAPONS = [
+    ['简易近战', [
+      ['短棒', '1 sp', '1d4 钝击', '2 磅', '轻型'], ['匕首', '2 gp', '1d4 穿刺', '1 磅', '灵巧、轻型、投掷（20/60）'],
+      ['巨棒', '2 sp', '1d8 钝击', '10 磅', '双手'], ['手斧', '5 gp', '1d6 挥砍', '2 磅', '轻型、投掷（20/60）'],
+      ['标枪', '5 sp', '1d6 穿刺', '2 磅', '投掷（30/120）'], ['轻锤', '2 gp', '1d4 钝击', '2 磅', '轻型、投掷（20/60）'],
+      ['硬头锤', '5 gp', '1d6 钝击', '4 磅', '—'], ['长棍', '2 sp', '1d6 钝击', '4 磅', '两用（1d8）'],
+      ['镰刀', '1 gp', '1d4 挥砍', '2 磅', '轻型'], ['矛', '1 gp', '1d6 穿刺', '3 磅', '投掷（20/60）、两用（1d8）']]],
+    ['简易远程', [
+      ['轻弩', '25 gp', '1d8 穿刺', '5 磅', '弹药（80/320）、装填、双手'], ['飞镖', '5 cp', '1d4 穿刺', '1/4 磅', '灵巧、投掷（20/60）'],
+      ['短弓', '25 gp', '1d6 穿刺', '2 磅', '弹药（80/320）、双手'], ['投石索', '1 sp', '1d4 钝击', '—', '弹药（30/120）']]],
+    ['军用近战', [
+      ['战斧', '10 gp', '1d8 挥砍', '4 磅', '两用（1d10）'], ['链枷', '10 gp', '1d8 钝击', '2 磅', '—'],
+      ['大砍刀', '20 gp', '1d10 挥砍', '6 磅', '重型、触及、双手'], ['巨斧', '30 gp', '1d12 挥砍', '7 磅', '重型、双手'],
+      ['巨剑', '50 gp', '2d6 挥砍', '6 磅', '重型、双手'], ['戟', '20 gp', '1d10 挥砍', '6 磅', '重型、触及、双手'],
+      ['骑枪', '10 gp', '1d12 穿刺', '6 磅', '触及、特殊'], ['长剑', '15 gp', '1d8 挥砍', '3 磅', '两用（1d10）'],
+      ['巨锤', '10 gp', '2d6 钝击', '10 磅', '重型、双手'], ['钉头锤', '15 gp', '1d8 穿刺', '4 磅', '—'],
+      ['长矛', '5 gp', '1d10 穿刺', '18 磅', '重型、触及、双手'], ['刺剑', '25 gp', '1d8 穿刺', '2 磅', '灵巧'],
+      ['弯刀', '25 gp', '1d6 挥砍', '3 磅', '灵巧、轻型'], ['短剑', '10 gp', '1d6 穿刺', '2 磅', '灵巧、轻型'],
+      ['三叉戟', '5 gp', '1d6 穿刺', '4 磅', '投掷（20/60）、两用（1d8）'], ['战镐', '5 gp', '1d8 穿刺', '2 磅', '—'],
+      ['战锤', '15 gp', '1d8 钝击', '2 磅', '两用（1d10）'], ['鞭', '2 gp', '1d4 挥砍', '3 磅', '灵巧、触及']]],
+    ['军用远程', [
+      ['吹箭筒', '10 gp', '1 穿刺', '1 磅', '弹药（25/100）、装填'], ['手弩', '75 gp', '1d6 穿刺', '3 磅', '弹药（30/120）、轻型、装填'],
+      ['重弩', '50 gp', '1d10 穿刺', '18 磅', '弹药（100/400）、重型、装填、双手'], ['长弓', '50 gp', '1d8 穿刺', '2 磅', '弹药（150/600）、重型、双手'],
+      ['捕网', '1 gp', '—', '3 磅', '特殊、投掷（5/15）']]]
+  ];
+
+  var FEATS = [
+    ['警觉', 125, 'p125-1', ''], ['运动健将', 125, 'p125-6', ''], ['演员', 125, 'p125-12', ''], ['冲锋手', 125, 'p125-21', ''],
+    ['强弩专家', 125, 'p125-24', ''], ['防御式决斗', 125, 'p125-31', '敏捷 13'], ['双持客', 125, 'p125-34', ''], ['地城探索者', 125, 'p125-39', ''],
+    ['耐性', 125, 'p125-45', ''], ['元素导师', 125, 'p125-49', '能施展至少一个法术'], ['擒抱者', 125, 'p125-54', '力量 13'],
+    ['巨武器大师', 126, 'p126-0', ''], ['医疗师', 126, 'p126-7', ''], ['重甲运用', 126, 'p126-12', '中甲熟练'], ['重甲大师', 126, 'p126-17', '重甲熟练'],
+    ['领袖之证', 126, 'p126-22', '魅力 13'], ['敏锐心灵', 126, 'p126-25', ''], ['轻甲运用', 126, 'p126-31', ''], ['语言学家', 126, 'p126-35', ''],
+    ['幸运', 126, 'p126-40', ''], ['巫师杀手', 126, 'p126-46', ''], ['魔法学徒', 126, 'p126-50', ''], ['战技专家', 127, 'p127-0', ''],
+    ['中甲大师', 127, 'p127-8', '中甲熟练'], ['灵活移动', 127, 'p127-14', ''], ['中甲运用', 127, 'p127-21', '轻甲熟练'], ['骑乘战斗', 127, 'p127-26', ''],
+    ['观察力', 127, 'p127-33', ''], ['长柄武器大师', 127, 'p127-39', ''], ['强健身心', 127, 'p127-41', ''], ['仪式施法者', 127, 'p127-45', '智力或感知 13'],
+    ['凶蛮打手', 127, 'p127-50', ''], ['哨兵', 127, 'p127-52', ''], ['神射手', 128, 'p128-0', ''], ['盾牌大师', 128, 'p128-8', ''],
+    ['熟习', 128, 'p128-18', ''], ['隐伏者', 128, 'p128-20', '敏捷 13'], ['法术射手', 128, 'p128-28', '能施展至少一个法术'], ['斗殴高手', 128, 'p128-38', ''],
+    ['健壮', 128, 'p128-44', ''], ['战地施法者', 128, 'p128-46', '能施展至少一个法术'], ['武器大师', 128, 'p128-50', '']
+  ];
+
+  function pg(p, anchor, label) {
+    return '<a class="pg" href="./#/p/' + p + (anchor ? '/' + anchor : '') + '">' + (label || 'p' + p) + '</a>';
+  }
+  function sign(n) { return (n >= 0 ? '+' : '−') + Math.abs(n); }
+  function mod(s) { return Math.floor((s - 10) / 2); }
+  function abList(o) {
+    return AB.filter(function (k) { return o[k]; }).map(function (k) { return ABN[k] + ' +' + o[k]; }).join('，');
+  }
+
+  // ---- static tables ----
+  document.getElementById('raceTable').innerHTML =
+    '<tr><th>种族</th><th>属性加值</th><th>体型 / 速度</th><th>黑暗视觉</th><th>特质</th><th>语言</th></tr>' +
+    RACES.map(function (r) {
+      var ab = r.id === 'variant-human' ? '任选两项 +1' : r.id === 'half-elf' ? '魅力 +2，另两项各 +1' : abList(r.ab);
+      return '<tr><td class="nw">' + r.name + ' ' + pg(r.page) + '</td><td>' + ab + '</td><td class="nw">' + r.size + ' / ' + r.speed + ' 尺</td><td>' +
+        (r.dark ? r.dark + ' 尺' : '—') + '</td><td>' + r.traits + '</td><td>' + r.lang + '</td></tr>';
+    }).join('');
+
+  document.getElementById('classTable').innerHTML =
+    '<tr><th>职业</th><th>生命骰 / 1 级 HP</th><th>主属性</th><th>豁免</th><th>护甲</th><th>武器</th><th>工具</th><th>技能</th><th>1 级特性</th></tr>' +
+    CLASSES.map(function (c) {
+      return '<tr><td class="nw">' + c.name + ' ' + pg(c.page) + '<br><small>职业表 ' + pg(c.table) + '</small></td><td class="nw">d' + c.hd + '<br><small>' + c.hd + ' + 体质</small></td><td>' + c.primary +
+        '</td><td class="nw">' + c.saves.map(function (s) { return ABN[s]; }).join('、') + '</td><td>' + c.armor + '</td><td>' + c.weapons + '</td><td>' + c.tools +
+        '</td><td>' + (c.skillFrom === ALL_SKILLS ? '任选 ' + c.skillN + ' 项' : '选 ' + c.skillN + '：' + c.skillFrom.join('、')) + (c.note ? '<br><small>' + c.note + '</small>' : '') +
+        '</td><td>' + c.f1 + '</td></tr>';
+    }).join('');
+
+  document.getElementById('quickTable').innerHTML = '<tr><th>职业</th><th>建议</th></tr>' + CLASSES.map(function (c) {
+    return '<tr><td class="nw">' + c.name + ' ' + pg(c.page) + '</td><td>' + c.quick + '</td></tr>';
+  }).join('');
+
+  document.getElementById('bgTable').innerHTML =
+    '<tr><th>背景</th><th>技能</th><th>工具</th><th>语言</th><th>特性</th><th>钱袋</th></tr>' +
+    BGS.map(function (b) {
+      return '<tr><td class="nw">' + b.name + ' ' + pg(b.page) + '</td><td class="nw">' + b.skills.join('、') + '</td><td>' + b.tools + '</td><td class="nw">' + b.lang +
+        '</td><td>' + b.feat + '</td><td class="nw">' + b.gold + ' gp</td></tr>';
+    }).join('');
+
+  document.getElementById('weaponTable').innerHTML = '<tr><th>武器</th><th>价格</th><th>伤害</th><th>重量</th><th>属性</th></tr>' +
+    WEAPONS.map(function (g) {
+      return '<tr><td colspan="5" class="muted">' + g[0] + '武器</td></tr>' + g[1].map(function (w) {
+        return '<tr><td class="nw">' + w[0] + '</td><td class="nw">' + w[1] + '</td><td class="nw">' + w[2] + '</td><td class="nw">' + w[3] + '</td><td>' + w[4] + '</td></tr>';
+      }).join('');
+    }).join('');
+
+  document.getElementById('featTable').innerHTML = '<tr><th>专长</th><th>先决条件</th></tr>' + FEATS.map(function (f) {
+    return '<tr><td>' + pg(f[1], f[2], f[0]) + '</td><td>' + (f[3] || '<span class="muted">—</span>') + '</td></tr>';
+  }).join('');
+
+  // ---- builder ----
+  var ARRAY = [15, 14, 13, 12, 10, 8];
+  var COST = { 8: 0, 9: 1, 10: 2, 11: 3, 12: 4, 13: 5, 14: 7, 15: 9 };
+  var KEY = 'phb_builder_v1';
+  var defaults = { name: '', race: 'hill-dwarf', cls: 'fighter', bg: 'soldier', method: 'array',
+    base: { str: 15, dex: 13, con: 14, int: 8, wis: 12, cha: 10 }, picks: [], skills: [] };
+  var st;
+  try { st = Object.assign({}, defaults, JSON.parse(localStorage.getItem(KEY) || '{}')); } catch (e) { st = Object.assign({}, defaults); }
+
+  var $ = function (id) { return document.getElementById(id); };
+  $('bRace').innerHTML = RACES.map(function (r) { return '<option value="' + r.id + '">' + r.name + '</option>'; }).join('');
+  $('bClass').innerHTML = CLASSES.map(function (c) { return '<option value="' + c.id + '">' + c.name + '</option>'; }).join('');
+  $('bBg').innerHTML = BGS.map(function (b) { return '<option value="' + b.id + '">' + b.name + '</option>'; }).join('');
+
+  function find(list, id) { return list.filter(function (x) { return x.id === id; })[0] || list[0]; }
+  function save() { localStorage.setItem(KEY, JSON.stringify(st)); }
+
+  function raceBonus(race) {
+    var b = {};
+    AB.forEach(function (k) { b[k] = race.ab[k] || 0; });
+    if (race.pick) st.picks.slice(0, race.pick).forEach(function (k) { if (b.hasOwnProperty(k)) b[k] += race.pickVal; });
+    return b;
+  }
+
+  function renderRaceExtra(race) {
+    var box = $('raceExtra');
+    if (!race.pick) { box.innerHTML = ''; return; }
+    var opts = AB.filter(function (k) { return k !== race.pickExclude; });
+    var html = '<label class="f">选择两项属性各 +1</label><div class="row-btns" style="margin-top:0">';
+    opts.forEach(function (k) {
+      var on = st.picks.indexOf(k) >= 0;
+      html += '<button type="button" class="btn" data-pick="' + k + '" aria-pressed="' + on + '" style="' + (on ? 'border-color:var(--gold);background:#3a2d1a' : '') + '">' + ABN[k] + '</button>';
+    });
+    box.innerHTML = html + '</div>';
+  }
+
+  $('raceExtra').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-pick]');
+    if (!b) return;
+    var k = b.getAttribute('data-pick');
+    var i = st.picks.indexOf(k);
+    if (i >= 0) st.picks.splice(i, 1);
+    else { st.picks.push(k); if (st.picks.length > 2) st.picks.shift(); }
+    update();
+  });
+
+  function renderAbilityInputs() {
+    var html = '';
+    AB.forEach(function (k) {
+      html += '<div class="a"><div class="k">' + ABN[k] + '</div>';
+      if (st.method === 'array') {
+        html += '<select data-ab="' + k + '">' + ARRAY.map(function (v) { return '<option' + (st.base[k] === v ? ' selected' : '') + '>' + v + '</option>'; }).join('') + '</select>';
+      } else {
+        var mn = st.method === 'buy' ? 8 : 3, mx = st.method === 'buy' ? 15 : 18;
+        html += '<input type="number" data-ab="' + k + '" min="' + mn + '" max="' + mx + '" value="' + st.base[k] + '">';
+      }
+      html += '<div class="bonus" id="bn-' + k + '"></div><div class="fin" id="fin-' + k + '"></div><div class="mod" id="mod-' + k + '"></div></div>';
+    });
+    $('abil').innerHTML = html;
+  }
+
+  $('abil').addEventListener('change', function (e) {
+    var k = e.target.getAttribute('data-ab');
+    if (!k) return;
+    var v = parseInt(e.target.value, 10) || 8;
+    if (st.method === 'array') {
+      // swap so the array stays a permutation
+      var other = AB.filter(function (x) { return x !== k && st.base[x] === v; })[0];
+      if (other) st.base[other] = st.base[k];
+      st.base[k] = v;
+      renderAbilityInputs();
+    } else {
+      var mn = st.method === 'buy' ? 8 : 3, mx = st.method === 'buy' ? 15 : 18;
+      st.base[k] = Math.max(mn, Math.min(mx, v));
+      e.target.value = st.base[k];
+    }
+    update();
+  });
+
+  function applyOrder(order, values) {
+    order.forEach(function (k, i) { st.base[k] = values[i]; });
+  }
+
+  $('suggestBtn').addEventListener('click', function () {
+    var c = find(CLASSES, st.cls);
+    if (st.method === 'roll') {
+      var vals = AB.map(function (k) { return st.base[k]; }).sort(function (a, b) { return b - a; });
+      applyOrder(c.order, vals);
+    } else applyOrder(c.order, ARRAY); // 标准数组恰好也是 27 点购点
+    st.bg = c.bg;
+    renderAbilityInputs();
+    update();
+  });
+
+  $('rollBtn').addEventListener('click', function () {
+    st.method = 'roll';
+    AB.forEach(function (k) {
+      var r = [0, 0, 0, 0].map(function () { return 1 + Math.floor(Math.random() * 6); }).sort(function (a, b) { return b - a; });
+      st.base[k] = r[0] + r[1] + r[2];
+    });
+    renderAbilityInputs();
+    update();
+  });
+
+  ['bName', 'bRace', 'bClass', 'bBg', 'bMethod'].forEach(function (id) {
+    $(id).addEventListener(id === 'bName' ? 'input' : 'change', function () {
+      if (id === 'bName') st.name = this.value;
+      if (id === 'bRace') { st.race = this.value; st.picks = []; }
+      if (id === 'bClass') st.cls = this.value;
+      if (id === 'bBg') st.bg = this.value;
+      if (id === 'bMethod') {
+        st.method = this.value;
+        if (st.method === 'array') applyOrder(find(CLASSES, st.cls).order, ARRAY);
+        if (st.method === 'buy') AB.forEach(function (k) { st.base[k] = Math.max(8, Math.min(15, st.base[k])); });
+        renderAbilityInputs();
+      }
+      update();
+    });
+  });
+
+  $('skillBox').addEventListener('change', function (e) {
+    var s = e.target.getAttribute('data-skill');
+    if (!s) return;
+    var i = st.skills.indexOf(s);
+    if (e.target.checked && i < 0) st.skills.push(s);
+    if (!e.target.checked && i >= 0) st.skills.splice(i, 1);
+    update();
+  });
+
+  $('resetBtn').addEventListener('click', function () {
+    if (!confirm('清空当前角色草稿？')) return;
+    st = JSON.parse(JSON.stringify(defaults));
+    renderAbilityInputs();
+    update();
+  });
+
+  var lastExport = '';
+  $('exportBtn').addEventListener('click', function () {
+    var box = $('exportBox');
+    box.style.display = 'block';
+    box.value = lastExport;
+    box.select();
+    if (navigator.clipboard) navigator.clipboard.writeText(lastExport).then(function () { $('exportBtn').textContent = '已复制 ✓'; setTimeout(function () { $('exportBtn').textContent = '导出文本'; }, 1500); }).catch(function () {});
+  });
+
+  function update() {
+    var race = find(RACES, st.race), cls = find(CLASSES, st.cls), bg = find(BGS, st.bg);
+    $('bName').value = st.name;
+    $('bRace').value = race.id;
+    $('bClass').value = cls.id;
+    $('bBg').value = bg.id;
+    $('bMethod').value = st.method;
+    renderRaceExtra(race);
+
+    var bonus = raceBonus(race);
+    var fin = {}, m = {};
+    AB.forEach(function (k) {
+      fin[k] = st.base[k] + bonus[k];
+      m[k] = mod(fin[k]);
+      var bn = $('bn-' + k);
+      if (bn) {
+        bn.textContent = bonus[k] ? '种族 +' + bonus[k] : '';
+        $('fin-' + k).textContent = fin[k];
+        $('mod-' + k).textContent = sign(m[k]);
+      }
+    });
+
+    var hint = '';
+    if (st.method === 'buy') {
+      var spent = AB.reduce(function (s, k) { return s + (COST[st.base[k]] || 0); }, 0);
+      hint = spent === 27 ? '<span class="ok">已用 27 / 27 点</span>' : spent > 27 ? '<span class="warn">超支：已用 ' + spent + ' / 27 点</span>' : '剩余 ' + (27 - spent) + ' 点（已用 ' + spent + '）';
+    } else if (st.method === 'array') {
+      hint = '下拉选择会自动与另一项交换，保证 15/14/13/12/10/8 各用一次。';
+    } else {
+      hint = '可直接输入掷骰结果（3–18），或点「掷一组属性」。';
+    }
+    if (race.pick && st.picks.length < race.pick) hint += '<br><span class="warn">还需选择 ' + (race.pick - st.picks.length) + ' 项种族属性加值</span>';
+    $('methodHint').innerHTML = hint;
+
+    var prof = 2;
+    var hp = cls.hd + m.con + (race.hp || 0);
+    var ac = 10 + m.dex, acNote = '无甲';
+    if (cls.ac === 'barb') { ac += m.con; acNote = '无甲防御（10 + 敏捷 + 体质）'; }
+    if (cls.ac === 'monk') { ac += m.wis; acNote = '无甲防御（10 + 敏捷 + 感知）'; }
+
+    var fixed = {};
+    bg.skills.forEach(function (s) { fixed[s] = '背景'; });
+    (race.skills || []).forEach(function (s) { fixed[s] = fixed[s] ? fixed[s] + '/种族' : '种族'; });
+    st.skills = st.skills.filter(function (s) { return !fixed[s]; });
+    var chosen = {};
+    st.skills.forEach(function (s) { chosen[s] = 1; });
+    var allowed = cls.skillN + (race.freeSkills || 0);
+    var nChosen = st.skills.length;
+    var offList = st.skills.filter(function (s) { return cls.skillFrom.indexOf(s) < 0; }).length;
+    var overlap = bg.skills.filter(function (s) { return (race.skills || []).indexOf(s) >= 0; });
+
+    var skillBonus = {};
+    $('skillBox').innerHTML = SKILLS.map(function (s) {
+      var name = s[0], ab = s[1];
+      var isFixed = !!fixed[name], on = isFixed || !!chosen[name];
+      var b = m[ab] + (on ? prof : 0);
+      skillBonus[name] = b;
+      var cl = (isFixed ? 'fixed ' : '') + (cls.skillFrom.indexOf(name) >= 0 && cls.skillFrom !== ALL_SKILLS ? 'cls' : '');
+      return '<label class="' + cl + '" title="' + (isFixed ? '来自' + fixed[name] : '') + '"><input type="checkbox" data-skill="' + name + '"' + (on ? ' checked' : '') + (isFixed ? ' disabled' : '') + '>' +
+        name + ' <span class="ab">' + ABN[ab] + '</span><span class="b">' + sign(b) + '</span></label>';
+    }).join('');
+
+    var sh = '<div class="kv">职业可选 <b>' + cls.skillN + '</b> 项' + (race.freeSkills ? '，种族另给 <b>' + race.freeSkills + '</b> 项任选' : '') + '：已选 ' + nChosen + ' / ' + allowed + '</div>';
+    if (nChosen > allowed) sh += '<div class="warn">选多了 ' + (nChosen - allowed) + ' 项</div>';
+    if (offList > (race.freeSkills || 0)) sh += '<div class="warn">有 ' + (offList - (race.freeSkills || 0)) + ' 项不在' + cls.name + '的可选列表里（金底为可选）</div>';
+    if (overlap.length) sh += '<div class="muted" style="font-size:.85rem">种族与背景重复给了「' + overlap.join('、') + '」，按规则可改选任意一项技能，原书 ' + pg(99, 'p99-4', 'p99') + '</div>';
+    $('skillHint').innerHTML = sh;
+
+    var castAb = cls.cast;
+    var saveDC = castAb ? 8 + prof + m[castAb] : null;
+    var stats = [
+      ['生命值', hp], ['护甲等级', ac], ['先攻', sign(m.dex)], ['速度', race.speed + ' 尺'],
+      ['熟练加值', '+2'], ['被动察觉', 10 + skillBonus['察觉']]
+    ];
+    if (castAb) { stats.push(['法术豁免 DC', saveDC]); stats.push(['法术攻击', sign(prof + m[castAb])]); }
+    $('stats').innerHTML = stats.map(function (s) { return '<div class="stat"><div class="v">' + s[1] + '</div><div class="k">' + s[0] + '</div></div>'; }).join('');
+
+    var saves = AB.map(function (k) {
+      var p = cls.saves.indexOf(k) >= 0;
+      return (p ? '<b style="color:var(--gold-bright)">●' : '○') + ABN[k] + ' ' + sign(m[k] + (p ? prof : 0)) + (p ? '</b>' : '');
+    }).join('　');
+
+    var prepared = '';
+    if (cls.id === 'cleric' || cls.id === 'druid') prepared = '每日准备 ' + Math.max(1, m.wis + 1) + ' 个 1 环法术';
+    if (cls.id === 'wizard') prepared = '法术书 6 个，每日准备 ' + Math.max(1, m.int + 1) + ' 个';
+    var castLine = castAb ? (cls.castFrom ? '施法（' + ABN[castAb] + '）2 级开始' : '施法属性 ' + ABN[castAb] + (prepared ? '；' + prepared : '')) : '';
+
+    $('summary').innerHTML =
+      '<div class="kv"><b>豁免</b>' + saves + '</div>' +
+      '<div class="kv"><b>HP</b>' + cls.hd + '（d' + cls.hd + ' 最大值）' + sign(m.con) + '（体质）' + (race.hp ? ' +1（矮人刚毅）' : '') + '；升级每级 +' + (cls.hd / 2 + 1) + sign(m.con) + (race.hp ? '+1' : '') + '</div>' +
+      '<div class="kv"><b>AC</b>' + ac + '（' + acNote + '，穿甲另算，见 ' + pg(112) + '）</div>' +
+      '<div class="kv"><b>体型 / 视觉</b>' + race.size + (race.dark ? '，黑暗视觉 ' + race.dark + ' 尺' : '') + '</div>' +
+      '<div class="kv"><b>熟练</b>护甲：' + cls.armor + (race.id === 'mountain-dwarf' ? '（种族另给轻甲、中甲）' : '') + '；武器：' + cls.weapons + '；工具：' + cls.tools + (bg.tools !== '—' ? '、' + bg.tools : '') + '</div>' +
+      '<div class="kv"><b>语言</b>' + race.lang + (bg.lang !== '—' ? '；背景另选 ' + bg.lang : '') + '</div>' +
+      '<div class="kv"><b>1 级特性</b>' + cls.f1 + ' ' + pg(cls.page) + '</div>' +
+      (castLine ? '<div class="kv"><b>施法</b>' + castLine + '</div>' : '') +
+      '<div class="kv"><b>种族特质</b>' + race.traits + ' ' + pg(race.page) + '</div>' +
+      '<div class="kv"><b>背景特性</b>' + bg.feat + '；起始钱袋 ' + bg.gold + ' gp ' + pg(bg.page) + '</div>' +
+      '<div class="kv"><b>负重上限</b>' + fin.str * 15 + ' 磅（力量 × 15）</div>';
+
+    var skillList = SKILLS.filter(function (s) { return fixed[s[0]] || chosen[s[0]]; }).map(function (s) { return s[0] + ' ' + sign(skillBonus[s[0]]); });
+    lastExport = [
+      '【' + (st.name || '无名冒险者') + '】' + race.name + ' ' + cls.name + ' 1 级 · 背景：' + bg.name,
+      '属性：' + AB.map(function (k) { return ABN[k] + ' ' + fin[k] + '(' + sign(m[k]) + ')'; }).join('  '),
+      'HP ' + hp + '  AC ' + ac + '  先攻 ' + sign(m.dex) + '  速度 ' + race.speed + ' 尺  熟练 +2  被动察觉 ' + (10 + skillBonus['察觉']),
+      '生命骰：1d' + cls.hd,
+      '豁免熟练：' + cls.saves.map(function (k) { return ABN[k] + ' ' + sign(m[k] + prof); }).join('、'),
+      '技能熟练：' + (skillList.join('、') || '（未选）'),
+      '护甲熟练：' + cls.armor + (race.id === 'mountain-dwarf' ? '、轻甲、中甲' : ''),
+      '武器熟练：' + cls.weapons,
+      '工具：' + ([cls.tools, bg.tools].filter(function (t) { return t && t !== '无' && t !== '—'; }).join('、') || '无'),
+      '语言：' + race.lang + (bg.lang !== '—' ? '；背景 ' + bg.lang : ''),
+      castAb ? '施法：' + ABN[castAb] + '  豁免 DC ' + saveDC + '  法术攻击 ' + sign(prof + m[castAb]) + (cls.castFrom ? '（2 级起）' : '') : '',
+      '职业特性：' + cls.f1,
+      '种族特质：' + race.traits,
+      '背景特性：' + bg.feat + '；钱袋 ' + bg.gold + ' gp'
+    ].filter(Boolean).join('\n');
+    if ($('exportBox').style.display === 'block') $('exportBox').value = lastExport;
+    save();
+  }
+
+  renderAbilityInputs();
+  update();
+})();
+</script>
+</body>
+</html>
