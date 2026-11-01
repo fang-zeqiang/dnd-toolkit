@@ -25,8 +25,5 @@ Wiki 的外壳页面：左侧目录树 + 右侧内容区。目录树来自原书
 ### 建卡速查 (Character Guide)
 `/phb/guide.html`：从 PHB 摘录的 1 级建卡规则汇总 + 角色草稿计算器。每条规则附原书页码回链。
 
-### PIN 门禁 (PIN Gate)
-Wiki 与 PHB 区的访问口令。目的是「不对公网裸露」而非强安全——防搜索引擎与路人，不防有心人。
-
 ### 主站 (Landing)
-`dnd.zeqiang.fun` 首页，工具、Wiki 与 PHB 的入口。工具公开，Wiki / PHB 过 PIN 门禁。
+`dnd.zeqiang.fun` 首页，工具、Wiki 与 PHB 的入口。全站公开，无访问口令。

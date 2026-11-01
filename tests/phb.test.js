@@ -29,8 +29,7 @@ assert.ok(toc.heads.some((h) => h[0].startsWith('魔法飞弹')));
 const p35 = fs.readFileSync('phb/pages/035.html', 'utf8');
 assert.match(p35, /<td>20th<\/td><td>\+6<\/td><td>原初斗士<\/td>/);
 
-// 入口、门禁、速查页
+// 入口、速查页
 assert.match(fs.readFileSync('index.html', 'utf8'), /href="\/phb\/"/);
-assert.match(fs.readFileSync('middleware.ts', 'utf8'), /"\/phb\/:path\*"/);
 const guide = fs.readFileSync('phb/guide.html', 'utf8');
 for (const s of ['角色草稿', '种族速查', '职业速查', '背景速查', '兼职先决条件']) assert.ok(guide.includes(s), s);

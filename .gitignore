@@ -21,7 +21,6 @@
 !tests/
 !tests/**
 !CONTEXT.md
-!middleware.ts
 !wiki/
 !wiki/**
 !phb/
